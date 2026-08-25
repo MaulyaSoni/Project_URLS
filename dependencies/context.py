@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from db import get_db
 from security.user import get_current_user
 from schema import Users
-def get_admin_context(
+def admin_context(
     db : Session = Depends(get_db),
     current_user : Users = Depends(get_current_user)):
 
@@ -12,3 +12,9 @@ def get_admin_context(
 
     return {'db' : db , 'current_user' : current_user}
 
+def user_context(
+    db : Session = Depends(get_db),
+    current_user : Users = Depends(get_current_user)  
+    ):
+
+    return {'db' : db , 'current_user' : current_user}

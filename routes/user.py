@@ -7,6 +7,7 @@ from security.user import authenticate_user , get_current_user
 from security.password import generate_hash_password
 from schema import Users
 from models.user import UsersRequest , UsersResponse
+
 load_dotenv()
 ADMIN_KEY = os.getenv("ADMIN_KEY")
 
