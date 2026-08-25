@@ -6,7 +6,7 @@ from schema import Base, Users
 from models.message import MessageResponse
 from models.user import UsersResponse , UsersRequest 
 from models.url import URLRequest , URLResponse
-from routes.user import create_admin , create_user , fetch_all_user
+from routes.user import create_admin , create_user , fetch_all_user , delete_user
 from routes.token import create_token
 from routes.url import get_url_stats
 from dependencies.context import admin_context , user_context
@@ -79,4 +79,3 @@ def delete_user_func(
     context = Depends(admin_context)):
 
     return delete_user(context["db"] , userid , context["current_user"])
- 
