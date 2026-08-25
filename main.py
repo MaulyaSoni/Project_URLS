@@ -49,8 +49,7 @@ def get_my_info(
 
 @app.get("/users/all" , response_model = list[UsersResponse])
 def get_all_users(
-    context = Depends(get_admin_context)
-    ):
+    context = Depends(get_admin_context)):
  
     return fetch_all_user(context["db"],context["current_user"])
 
