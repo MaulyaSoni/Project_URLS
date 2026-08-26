@@ -1,41 +1,65 @@
+import validators
+from sqlalchemy import desc
 from sqlalchemy.orm import Session
-from models.url import URLRequest
+from models.url import URLRequest , URLStatsResponse , URLResponse
 from schema import URL
 from fastapi.exceptions import HTTPException
+from fastapi import Request
 from schema import Users
-from operations.clicks import total_clicks , clicks_per_day
-from operations.converter import short_link_func
+from fastapi.responses import RedirectResponse
+from operations.key import create_random_key , create_unique_random_short_link
+
 
 def create_url(
     db : Session,
-    req : URLRequest,
+    url_req : URLRequest,
     current_user : Users):
 
-    # print(current_user)
-    existing_url = (db.query(URL).filter(URL.url == req.url).first())
-    if existing_url:
-        raise HTTPException(status_code=409 , detail="Duplicate Data found")
-    
+    if not validators.url(url_req.url):
+        raise HTTPException (status_code = 400 ,detail="Your provided URL is not valid")
+
+    existing_url = (db.query(URL).filter(URL.url == url_req.url).order_by(desc(URL.url_id)).first())
+    # print(existing_url.owner_id , current_user.userid)
+    if (existing_url and existing_url.owner_id == current_user.userid):
+        raise HTTPException (status_code = 409 ,detail=f"""You already have created link for this,Short link for that is {existing_url.short_link}""")
+   
+    short_link = create_unique_random_short_link(db)
+    secret_key = create_random_key(length = 10)
+
     new_url = URL(
-        url = req.url,
-        short_link = short_link_func(req.url),
-        owner = current_user.username
+        url = url_req.url,
+        short_link = short_link,
+        secret_key = secret_key,
+        owner_id = current_user.userid
     )
     db.add(new_url)
     db.commit()
     return new_url
 
+def get_url(
+    db : Session ,
+    short_link : str):
 
+    exist_url = (db.query(URL).filter(URL.short_link == short_link).order_by(desc(URL.url_id)).first())
+    print(URL.short_link , exist_url)
+    if exist_url is None:
+        raise HTTPException(status_code=404,detail="Request not found")
+
+    return exist_url.url
+    
 def get_url_stats(
     db : Session,
     url_id : str,
     current_user: Users):
 
-    url_obj = db.get(URL , url_id)
+    url_res = db.get(URL , url_id)
+    print(url_res.owner , current_user.username)
 
-    if URL.owner != current_user.owner:
+    if url_res.owner != current_user.username:
         raise HTTPException(status_code = 403 , detail = "!! Access restricted !!")
     if url_id is None :
         # logging.warning(f"{url_id} , url not found while updating ")
         raise HTTPException(status_code = 404 , detail = "Url ID not found ")
-    return url_obj    
+
+    print(url_res.stats_object)
+    return url_res.stats_object    

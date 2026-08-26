@@ -18,3 +18,8 @@ def user_context(
     ):
 
     return {'db' : db , 'current_user' : current_user}
+
+def new_user_context(
+    db : Session = Depends(get_db)    
+    ):
+    return {'db' : db}

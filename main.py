@@ -1,17 +1,18 @@
 from sqlalchemy.orm import Session
-from fastapi import FastAPI, HTTPException , Depends , BackgroundTasks
+from fastapi import FastAPI, HTTPException , Request, Depends , BackgroundTasks
 from fastapi.security import OAuth2PasswordRequestForm
 from db import get_db , engine
 from schema import Base, Users
 from models.message import MessageResponse
 from models.user import UsersResponse , UsersRequest 
 from models.url import URLRequest , URLResponse
+# from models.stats import StatsResponse
 from routes.user import create_admin , create_user , fetch_all_user , delete_user
 from routes.token import create_token
-from routes.url import get_url_stats
-from dependencies.context import admin_context , user_context
+from routes.url import get_url_stats , get_url , create_url
+from dependencies.context import admin_context , user_context , new_user_context
 from security.user import get_current_user
-from routes.url import create_url
+ 
 app = FastAPI()
 
 #---------------events-------------------------------------------------------------------
@@ -21,7 +22,12 @@ def create_tables():
     # if targetted database not exist , then generates the all defined db and tables 
     Base.metadata.create_all(engine)   
 
-#------------------------------------------- 
+@app.get("/")
+def read_root():
+    return "Welcome to the URL shortener app "    
+
+#----------------------------------CREATE----------------------------------
+#-----------------------------------USER-------------------------------- 
 @app.post("/user" , response_model = UsersResponse , status_code=201)
 def register_user(
     user_data: UsersRequest,
@@ -33,17 +39,17 @@ def register_user(
 def register_admin(
     user_data: UsersRequest,
     admin_key = str,
-    db: Session = Depends(get_db)):
-
+    db: Session = Depends(get_db)): 
     return create_admin(db ,user_data , admin_key)
 
 @app.post("/token")
 def token_generation(
     form_data: OAuth2PasswordRequestForm = Depends(),
-    db: Session = Depends(get_db)):
+    context = Depends(new_user_context)):
 
-    return create_token(db , form_data)
+    return create_token(context["db"] , form_data)
 
+#----------------------------------------URL-------------------------------
 @app.post("/url" , response_model=URLResponse , status_code=201)
 def create_url_func(
     req : URLRequest,
@@ -51,7 +57,18 @@ def create_url_func(
     ):
     return create_url(context["db"], req ,context["current_user"])
 
-@app.get("/url/stats/{url_id}" , response_model = URLResponse , status_code = 200)
+       
+#------------------------------READ---------------------
+@app.get("/url/{short_link}")
+def get_url_details(
+    short_link : str , 
+    # request : Request,
+    context = Depends(user_context)):
+    return get_url(context["db"] , short_link )
+
+@app.get("/url/stats/{url_id}"
+        #   , response_model = URLResponse 
+        )
 def get_url_stats_func(
     url_id : str,
     context = Depends(user_context)
@@ -59,7 +76,13 @@ def get_url_stats_func(
     return get_url_stats(context["db"] , url_id , context["current_user"])
 
 
-#------------------------------------------
+
+
+
+
+
+
+#---------------------------Users ---------------
 @app.get("/users/me" , response_model= UsersResponse)
 def get_my_info(
     current_user: Users = Depends(get_current_user)):

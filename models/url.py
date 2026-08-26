@@ -6,8 +6,15 @@ class URLRequest(BaseModel):
 class URLResponse(BaseModel):
     url_id : int
     url : str
-    owner : str 
+    owner_id : int 
     short_link : str 
+    secret_key : str
  
     model_config = ConfigDict(from_attributes=True)
 
+# class inheritance 
+class URLStatsResponse(URLResponse):
+    total_clicks : int
+    # clicks_per_day : int
+
+    model_config = ConfigDict(from_attributes=True)

@@ -28,7 +28,7 @@ def create_user(
     if existing_user:
         logging.warning("Duplicate User details input ")
         raise HTTPException(status_code=409,detail="User already exists")
-    print(user_data.email)
+ 
     new_user = Users(
         username=user_data.username,
         hashed_password=generate_hash_password(user_data.password),
