@@ -5,7 +5,7 @@ from db import get_db , engine
 from schema import Base, Users
 from models.message import MessageResponse
 from models.user import UsersResponse , UsersRequest 
-from models.url import URLRequest , URLResponse
+from models.url import URLRequest , URLResponse , URLUserResponse
 from routes.user import create_admin , create_user , fetch_all_user , delete_user
 from routes.token import create_token
 from routes.url import get_url_stats , get_url , create_url , get_all_url
@@ -62,7 +62,7 @@ def get_url_details(
     short_link : str , 
     request : Request,
     context = Depends(current_user_context)):
-    return get_url(context["db"] , short_link )
+    return get_url(context["db"] , request , short_link )
 
 @app.get("/url/stats/{url_id}")
         #   , response_model = URLResponse 
@@ -73,7 +73,7 @@ def get_url_stats_func(
     ):
     return get_url_stats(context["db"] , url_id , context["current_user"])
 
-@app.get("/url")
+@app.get("/url" , response_model= list[URLResponse])
 def get_all_url_func(
     context = Depends(admin_context)):
 

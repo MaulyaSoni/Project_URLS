@@ -1,7 +1,7 @@
 import validators
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
-from models.url import URLRequest , URLStatsResponse , URLResponse
+from models.url import URLRequest , URLStatsResponse , URLUserResponse
 from schema import URL
 from fastapi.exceptions import HTTPException
 from fastapi import Request
@@ -38,18 +38,18 @@ def create_url(
 
 def get_url(
     db : Session ,
+    request : Request,
     short_link : str):
 
     exist_url = (db.query(URL).filter(URL.short_link == short_link).order_by(desc(URL.url_id)).first())
     # print(URL.short_link , exist_url)
     if exist_url is None:
-        raise HTTPException(status_code=404,detail="Request not found")
+        raise HTTPException(status_code=404,detail=f"{request} not found")
 
     return RedirectResponse(exist_url.url)
 
 def get_all_url(
     db : Session):
-
     return db.query(URL).all()
 
 def get_url_stats(

@@ -8,10 +8,19 @@ class URLResponse(BaseModel):
     url : str
     owner_id : int 
     short_link : str 
-    secret_key : str
+    # secret_key : str
  
     model_config = ConfigDict(from_attributes=True)
 
+class URLUserResponse(BaseModel):
+    url_id: int
+    url : str 
+    short_link : str
+    owner_id :int 
+    secret_key : str
+
+    model_config = ConfigDict(from_attributes=True)
+    
 class URLStatsResponse(URLResponse):
     total_clicks : int
     # clicks_per_day : int
