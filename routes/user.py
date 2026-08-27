@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from sqlalchemy.orm import Session
 from fastapi import HTTPException , Depends ,  Request , BackgroundTasks
 from fastapi.security import OAuth2PasswordRequestForm
-from schema import Users
+from database.schema import Users
 from models.user import UsersRequest , UsersResponse
 from security.user import authenticate_user , get_current_user , create_access_token
 from security.password import generate_hash_password

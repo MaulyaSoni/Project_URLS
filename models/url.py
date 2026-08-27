@@ -12,11 +12,11 @@ class URLResponse(BaseModel):
  
     model_config = ConfigDict(from_attributes=True)
 
-class URLUserResponse(BaseModel):
-    url_id: int
-    url : str 
-    short_link : str
-    owner_id :int 
+class URLUserResponse(URLResponse):
+    # url_id: int
+    # url : str 
+    # short_link : str
+    # owner_id :int 
     secret_key : str
 
     model_config = ConfigDict(from_attributes=True)

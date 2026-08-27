@@ -2,10 +2,9 @@ import validators
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
 from models.url import URLRequest , URLStatsResponse , URLUserResponse
-from schema import URL
 from fastapi.exceptions import HTTPException
 from fastapi import Request
-from schema import Users
+from database.schema import Users , URL
 from fastapi.responses import RedirectResponse
 from operations.key import create_random_key , create_unique_random_short_link
 
@@ -36,7 +35,7 @@ def create_url(
     db.commit()
     return new_url
 
-def get_url(
+def get_url_link(
     db : Session ,
     request : Request,
     short_link : str):
@@ -47,11 +46,7 @@ def get_url(
         raise HTTPException(status_code=404,detail=f"{request} not found")
 
     exist_url.total_clicks = URL.total_clicks + 1
-    # update_url = URL(
-    #     short_link = short_link,
-    #     total_clicks = URL.total_clicks + 1
-    #     )
-    # db.add(update_url)
+
     db.commit()
 
     return RedirectResponse(exist_url.url)
@@ -60,7 +55,19 @@ def get_all_url(
     db : Session):
     return db.query(URL).all()
 
-def get_url_stats(
+def url_stats_key(
+    db : Session,
+    secret_key : str):
+
+    existing_url = db.query(URL).filter(URL.secret_key == secret_key).all()
+    # existing_url = db.get(URL , secret_key)
+ 
+    if existing_url is None:
+        raise HTTPException(status_code = 404 , detail= "!! Resource not found !! Secret key invalid ")    
+
+    return existing_url
+
+def url_stats_id(
     db : Session,
     url_id : str,
     current_user: Users):

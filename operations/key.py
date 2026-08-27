@@ -1,7 +1,7 @@
 import secrets
 import string
 from sqlalchemy.orm import Session
-from schema import URL
+from database.schema import URL
 
 def create_random_key(length: int = 5) -> str:
     chars = string.ascii_uppercase + string.digits

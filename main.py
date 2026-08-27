@@ -1,15 +1,16 @@
 from sqlalchemy.orm import Session
 from fastapi import FastAPI, HTTPException , Request, Depends , BackgroundTasks
 from fastapi.security import OAuth2PasswordRequestForm , OAuth2PasswordBearer
-from db import get_db , engine
-from schema import Base, Users
+from database.db import get_db , engine
+from database.schema import Base, Users
 from models.message import MessageResponse
 from models.user import UsersResponse , UsersRequest 
 from models.url import URLRequest , URLResponse , URLUserResponse , URLStatsResponse
 from routes.user import create_admin , create_user , fetch_all_user , delete_user ,login_with_token
-from routes.url import get_url_stats , get_url , create_url , get_all_url
+from routes.url import get_url_link , create_url , get_all_url , url_stats_id , url_stats_key
 from dependencies.context import admin_context , current_user_context , new_user_context 
 from security.user import get_current_user
+from routes.user import test
  
 app = FastAPI()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
@@ -48,7 +49,7 @@ def login_with_token_generation(
     return login_with_token(context["db"] , form_data)
 
 #----------------------------------------URL-------------------------------
-@app.post("/url" , response_model=URLResponse , status_code=201)
+@app.post("/url" , response_model=URLUserResponse , status_code=201)
 def create_url_func(
     req : URLRequest,
     context = Depends(current_user_context)
@@ -67,19 +68,29 @@ def get_all_url_func(
 #************************************************************
 
 @app.get("/url/{short_link}")
-def get_url_details(
+def get_url_details_short_link(
     short_link : str , 
     request : Request,
     # context = Depends(current_user_context)):
     context = Depends(new_user_context)):
-    return get_url(context["db"] , request , short_link )
+    return get_url_link(context["db"] , request , short_link )
 
-@app.get("/url/stats/{url_id}" , response_model=URLStatsResponse)
-def get_url_stats_func(
+#***********************************************
+
+@app.get("/url/stats/secret/{secret_key}", response_model=list[URLStatsResponse])
+def get_url_details_secret_key(
+    secret_key : str , 
+    # context = Depends(current_user_context)):
+    context = Depends(current_user_context)
+    ):
+    return url_stats_key(context["db"] , secret_key )
+
+@app.get("/url/stats/id/{url_id}" , response_model=list[URLStatsResponse])
+def get_url_details_url_id(
     url_id : str,
     context = Depends(current_user_context)
     ):
-    return get_url_stats(context["db"] , url_id , context["current_user"])
+    return url_stats_id(context["db"] , url_id , context["current_user"])
 
 #**********************************************************
 #---------------------------Users ---------------
