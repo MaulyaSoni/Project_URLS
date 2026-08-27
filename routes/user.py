@@ -9,6 +9,8 @@ from models.user import UsersRequest , UsersResponse
 from security.user import authenticate_user , get_current_user , create_access_token
 from security.password import generate_hash_password
 
+from sqlalchemy import select
+
 load_dotenv()
 ADMIN_KEY = os.getenv("ADMIN_KEY")
 
@@ -88,6 +90,13 @@ def fetch_all_user(
     # user_log : Users
     # logging.info(f"Fetch all users call by '{user_log.username}'")
     return db.query(Users).all()
+
+
+def test(
+    db : Session):
+    delete_user = (db.query(Users).filter(Users.userid == 1).all())
+    user = db.query(Users).all()
+    return delete_user
 
 #----------------------------------------------------------
 

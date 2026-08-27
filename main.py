@@ -121,3 +121,8 @@ def delete_user_func(
 def read_root():
     return "Welcome to the URL shortener app"    
 
+
+@app.get("/test", response_model=UsersResponse)
+def test_func(
+    context = Depends(new_user_context)):
+    return test(context["db"])
