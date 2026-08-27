@@ -1,18 +1,18 @@
 from sqlalchemy.orm import Session
 from fastapi import FastAPI, HTTPException , Request, Depends , BackgroundTasks
-from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordRequestForm , OAuth2PasswordBearer
 from db import get_db , engine
 from schema import Base, Users
 from models.message import MessageResponse
 from models.user import UsersResponse , UsersRequest 
-from models.url import URLRequest , URLResponse , URLUserResponse
-from routes.user import create_admin , create_user , fetch_all_user , delete_user
-from routes.token import create_token
+from models.url import URLRequest , URLResponse , URLUserResponse , URLStatsResponse
+from routes.user import create_admin , create_user , fetch_all_user , delete_user ,login_with_token
 from routes.url import get_url_stats , get_url , create_url , get_all_url
-from dependencies.context import admin_context , current_user_context , new_user_context , url_stats_context
+from dependencies.context import admin_context , current_user_context , new_user_context 
 from security.user import get_current_user
  
 app = FastAPI()
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 #---------------events-------------------------------------------------------------------
 
@@ -40,12 +40,12 @@ def register_admin(
     db: Session = Depends(get_db)): 
     return create_admin(db ,user_data , admin_key)
 
-@app.post("/token")
-def token_generation(
+@app.post("/login")
+def login_with_token_generation(
     form_data: OAuth2PasswordRequestForm = Depends(),
     context = Depends(new_user_context)):
 
-    return create_token(context["db"] , form_data)
+    return login_with_token(context["db"] , form_data)
 
 #----------------------------------------URL-------------------------------
 @app.post("/url" , response_model=URLResponse , status_code=201)
@@ -57,33 +57,33 @@ def create_url_func(
 
        
 #------------------------------READ---------------------
+
+@app.get("/url" , response_model= list[URLStatsResponse])
+def get_all_url_func(
+    context = Depends(admin_context)):
+
+    return get_all_url(context["db"])
+
+#************************************************************
+
 @app.get("/url/{short_link}")
 def get_url_details(
     short_link : str , 
     request : Request,
-    context = Depends(current_user_context)):
+    # context = Depends(current_user_context)):
+    context = Depends(new_user_context)):
     return get_url(context["db"] , request , short_link )
 
-@app.get("/url/stats/{url_id}")
-        #   , response_model = URLResponse 
-        # )
+@app.get("/url/stats/{url_id}" , response_model=URLStatsResponse)
 def get_url_stats_func(
     url_id : str,
     context = Depends(current_user_context)
     ):
     return get_url_stats(context["db"] , url_id , context["current_user"])
 
-@app.get("/url" , response_model= list[URLResponse])
-def get_all_url_func(
-    context = Depends(admin_context)):
-
-    return get_all_url(context["db"])
-
-
-
-
-
+#**********************************************************
 #---------------------------Users ---------------
+
 @app.get("/users/me" , response_model= UsersResponse)
 def get_my_info(
     current_user: Users = Depends(get_current_user)):
@@ -94,7 +94,7 @@ def get_my_info(
 def get_all_users(
     context = Depends(admin_context)):
 
-    return fetch_all_user(context["db"],context["current_user"])
+    return fetch_all_user(context["db"])
 
 #---------------------------delete-------------------------
 @app.delete("/users/delete/{userid}" , response_model = MessageResponse , status_code = 200)
@@ -105,6 +105,8 @@ def delete_user_func(
     return delete_user(context["db"] , userid , context["current_user"])
 
 
+
 @app.get("/")
 def read_root():
-    return "Welcome to the URL shortener app "    
+    return "Welcome to the URL shortener app"    
+

@@ -8,7 +8,7 @@ from db import get_db
 from schema import Users
 from security.password import verify_hash_password
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 SECRET_KEY = os.getenv("SECRET_KEY")
 

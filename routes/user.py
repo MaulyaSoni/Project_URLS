@@ -1,12 +1,13 @@
 import os
-from dotenv import load_dotenv
 import logging
+from dotenv import load_dotenv
 from sqlalchemy.orm import Session
 from fastapi import HTTPException , Depends ,  Request , BackgroundTasks
-from security.user import authenticate_user , get_current_user
-from security.password import generate_hash_password
+from fastapi.security import OAuth2PasswordRequestForm
 from schema import Users
 from models.user import UsersRequest , UsersResponse
+from security.user import authenticate_user , get_current_user , create_access_token
+from security.password import generate_hash_password
 
 load_dotenv()
 ADMIN_KEY = os.getenv("ADMIN_KEY")
@@ -16,6 +17,20 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s",
 )
+#----------------------------------------------------
+
+def login_with_token(
+    db : Session,
+    form_data : OAuth2PasswordRequestForm):
+
+    user = authenticate_user(db , form_data.username , form_data.password)
+    if user is None:
+        raise HTTPException(status_code=401,detail="Incorrect username or password")
+    
+    token = create_access_token(user.username)
+    logging.info(f"Access token created for user : {form_data.username}")
+    
+    return {"access_token": token,"token_type": "bearer"}
 
 #----------------------------------------------------------
 
@@ -66,10 +81,11 @@ def create_admin(
     logging.info(f"New admin : {user_data.username} created")
     return new_user
 
-def fetch_all_user(
-    db:Session,
-    user_log : Users):
+#-------------------------------------------------------------------
 
+def fetch_all_user(
+    db:Session):
+    # user_log : Users
     # logging.info(f"Fetch all users call by '{user_log.username}'")
     return db.query(Users).all()
 

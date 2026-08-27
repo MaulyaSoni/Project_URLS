@@ -46,6 +46,14 @@ def get_url(
     if exist_url is None:
         raise HTTPException(status_code=404,detail=f"{request} not found")
 
+    exist_url.total_clicks = URL.total_clicks + 1
+    # update_url = URL(
+    #     short_link = short_link,
+    #     total_clicks = URL.total_clicks + 1
+    #     )
+    # db.add(update_url)
+    db.commit()
+
     return RedirectResponse(exist_url.url)
 
 def get_all_url(
@@ -58,13 +66,13 @@ def get_url_stats(
     current_user: Users):
 
     url_res = db.get(URL , url_id)
-    print(url_res.owner , current_user.username)
+    # print(url_res.owner_id , current_user.userid, current_user.user_role)
 
-    if url_res.owner != current_user.username:
+    if url_res.owner_id != current_user.userid and current_user.user_role != 'Admin':
         raise HTTPException(status_code = 403 , detail = "!! Access restricted !!")
+    
     if url_id is None :
-        # logging.warning(f"{url_id} , url not found while updating ")
+        # logging.warning(f"{url_id} , url  ")
         raise HTTPException(status_code = 404 , detail = "Url ID not found ")
 
-    print(url_res.stats_object)
-    return url_res.stats_object    
+    return url_res 

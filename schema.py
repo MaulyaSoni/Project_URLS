@@ -22,13 +22,7 @@ class URL(Base):
     short_link: Mapped[str] = mapped_column(String(200))
     secret_key : Mapped[str] = mapped_column(String(255))
     total_clicks : Mapped[int] = mapped_column(Integer , default=0)
+
+    
     # clicks_per_day : Mapped[int] = mapped_column(Integer , default=0) 
 
-    # stats_object = relationship("Stats" , back_populates = "url_object")
-
-
-# class Stats(Base):
-#     __tablename__ = 'URL_Stats_table'
-
-#     url_id : Mapped[str] = mapped_column(ForeignKey("URL_table.url_id"), primary_key=True , nullable=False)
-#     url_object = relationship ("URL" , back_populates = "stats_object")

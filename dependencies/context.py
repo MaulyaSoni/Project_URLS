@@ -3,6 +3,10 @@ from sqlalchemy.orm import Session
 from db import get_db
 from security.user import get_current_user
 from schema import Users
+from fastapi.security import OAuth2PasswordBearer
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+
 def admin_context(
     db : Session = Depends(get_db),
     current_user : Users = Depends(get_current_user)):
@@ -22,10 +26,4 @@ def current_user_context(
 def new_user_context(
     db : Session = Depends(get_db)    
     ):
-    return {'db' : db}
-
-def url_stats_context(
-    db: Session = Depends(get_db),
-    current_user : Users = Depends(get_current_user),
-    admin : Users = Depends(admin_context)):
     return {'db' : db}
