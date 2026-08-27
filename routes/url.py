@@ -41,12 +41,17 @@ def get_url(
     short_link : str):
 
     exist_url = (db.query(URL).filter(URL.short_link == short_link).order_by(desc(URL.url_id)).first())
-    print(URL.short_link , exist_url)
+    # print(URL.short_link , exist_url)
     if exist_url is None:
         raise HTTPException(status_code=404,detail="Request not found")
 
-    return exist_url.url
-    
+    return RedirectResponse(exist_url.url)
+
+def get_all_url(
+    db : Session):
+
+    return db.query(URL).all()
+
 def get_url_stats(
     db : Session,
     url_id : str,

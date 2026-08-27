@@ -12,7 +12,7 @@ def admin_context(
 
     return {'db' : db , 'current_user' : current_user}
 
-def user_context(
+def current_user_context(
     db : Session = Depends(get_db),
     current_user : Users = Depends(get_current_user)  
     ):
@@ -22,4 +22,10 @@ def user_context(
 def new_user_context(
     db : Session = Depends(get_db)    
     ):
+    return {'db' : db}
+
+def url_stats_context(
+    db: Session = Depends(get_db),
+    current_user : Users = Depends(get_current_user),
+    admin : Users = Depends(admin_context)):
     return {'db' : db}

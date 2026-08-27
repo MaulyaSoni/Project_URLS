@@ -12,7 +12,6 @@ class URLResponse(BaseModel):
  
     model_config = ConfigDict(from_attributes=True)
 
-# class inheritance 
 class URLStatsResponse(URLResponse):
     total_clicks : int
     # clicks_per_day : int

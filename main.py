@@ -6,11 +6,10 @@ from schema import Base, Users
 from models.message import MessageResponse
 from models.user import UsersResponse , UsersRequest 
 from models.url import URLRequest , URLResponse
-# from models.stats import StatsResponse
 from routes.user import create_admin , create_user , fetch_all_user , delete_user
 from routes.token import create_token
-from routes.url import get_url_stats , get_url , create_url
-from dependencies.context import admin_context , user_context , new_user_context
+from routes.url import get_url_stats , get_url , create_url , get_all_url
+from dependencies.context import admin_context , current_user_context , new_user_context , url_stats_context
 from security.user import get_current_user
  
 app = FastAPI()
@@ -22,11 +21,10 @@ def create_tables():
     # if targetted database not exist , then generates the all defined db and tables 
     Base.metadata.create_all(engine)   
 
-@app.get("/")
-def read_root():
-    return "Welcome to the URL shortener app "    
+
 
 #----------------------------------CREATE----------------------------------
+
 #-----------------------------------USER-------------------------------- 
 @app.post("/user" , response_model = UsersResponse , status_code=201)
 def register_user(
@@ -53,7 +51,7 @@ def token_generation(
 @app.post("/url" , response_model=URLResponse , status_code=201)
 def create_url_func(
     req : URLRequest,
-    context = Depends(user_context)
+    context = Depends(current_user_context)
     ):
     return create_url(context["db"], req ,context["current_user"])
 
@@ -62,21 +60,24 @@ def create_url_func(
 @app.get("/url/{short_link}")
 def get_url_details(
     short_link : str , 
-    # request : Request,
-    context = Depends(user_context)):
+    request : Request,
+    context = Depends(current_user_context)):
     return get_url(context["db"] , short_link )
 
-@app.get("/url/stats/{url_id}"
+@app.get("/url/stats/{url_id}")
         #   , response_model = URLResponse 
-        )
+        # )
 def get_url_stats_func(
     url_id : str,
-    context = Depends(user_context)
+    context = Depends(current_user_context)
     ):
     return get_url_stats(context["db"] , url_id , context["current_user"])
 
+@app.get("/url")
+def get_all_url_func(
+    context = Depends(admin_context)):
 
-
+    return get_all_url(context["db"])
 
 
 
@@ -102,3 +103,8 @@ def delete_user_func(
     context = Depends(admin_context)):
 
     return delete_user(context["db"] , userid , context["current_user"])
+
+
+@app.get("/")
+def read_root():
+    return "Welcome to the URL shortener app "    

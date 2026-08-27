@@ -6,3 +6,4 @@ sqlalchemy
 fastapi
 python-dotenv
 uvicorn
+validators
