@@ -14,7 +14,6 @@ class URLResponse(BaseModel):
 
 class URLStatsResponse(URLResponse):
     total_clicks : int
-    # clicks_per_day : int
-    # clicked_at : datetime
+
     model_config = ConfigDict(from_attributes=True)
 

@@ -2,14 +2,14 @@ import os
 import logging
 from dotenv import load_dotenv
 from sqlalchemy.orm import Session
-from fastapi import HTTPException , Depends ,  Request , BackgroundTasks
+from fastapi import HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from database.schema import Users
-from models.user import UsersRequest , UsersResponse
-from security.user import authenticate_user , get_current_user , create_access_token
+from models.user import UsersRequest 
+from security.user import authenticate_user , create_access_token
 from security.password import generate_hash_password
 
-from sqlalchemy import select
+# from sqlalchemy import select
 
 load_dotenv()
 ADMIN_KEY = os.getenv("ADMIN_KEY")
@@ -30,7 +30,7 @@ def login_with_token(
         raise HTTPException(status_code=401,detail="Incorrect username or password")
  
     token = create_access_token(data = {"sub": user.username})
-    logging.info(f"Access token created for user : {form_data.username}")
+    logging.info(f"Access token created for user : '{form_data.username}'")
     
     return {"access_token": token,"token_type": "bearer"}
 
@@ -56,7 +56,7 @@ def create_user(
     db.commit()
     db.refresh(new_user)
 
-    logging.info(f"{user_data.username} New User created")
+    logging.info(f"{user_data.id} New User created")
     return new_user
 
 def create_admin(
@@ -80,23 +80,17 @@ def create_admin(
     )
     db.add(new_user)
     db.commit()
-    logging.info(f"New admin : {user_data.username} created")
+    logging.info(f"New admin : {user_data.id} created")
     return new_user
 
 #-------------------------------------------------------------------
 
 def fetch_all_user(
     db:Session):
-    # user_log : Users
-    # logging.info(f"Fetch all users call by '{user_log.username}'")
+    user_log : Users
+    logging.info(f"Fetch all users call : '{user_log.id}'")
     return db.query(Users).all()
 
-
-def test(
-    db : Session):
-    delete_user = (db.query(Users).filter(Users.userid == 1).all())
-    user = db.query(Users).all()
-    return delete_user
 
 #----------------------------------------------------------
 
@@ -111,5 +105,5 @@ def delete_user(
     
     db.delete(user)
     db.commit()
-    logging.info(f"{userid} , user deleted by {current_user.username}")
+    logging.info(f"{userid} , user deleted : '{current_user.username}'")
     return {"message" : f"{userid} , deleted successfully"}

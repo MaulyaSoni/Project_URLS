@@ -10,6 +10,13 @@ from database.schema import Users , URL , ClickLog , URLStats
 from models.url import URLRequest , URLStatsResponse
 from operations.key import create_unique_random_short_link
 from operations.tasks import record_click_metrics
+import logging
+
+logging.basicConfig(
+    filename="Log_employee_project.log",
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+)
 
 def create_url(
     db : Session,
@@ -21,6 +28,7 @@ def create_url(
 
     existing_url = (db.query(URL).filter(URL.url == url_req.url).order_by(desc(URL.url_id)).first())
     if (existing_url and existing_url.owner_id == current_user.userid):
+        logging.warning(f"Re-perform operation for same url : '{current_user.userid}'")
         raise HTTPException (status_code = 409 ,detail=f"""You already have created link for this,Short link for that is {existing_url.short_link}""")
    
     short_link = create_unique_random_short_link(db)
@@ -32,6 +40,7 @@ def create_url(
     )
     db.add(new_url)
     db.commit()
+    logging.info(f"New short link generated : '{current_user.userid}'")
     return new_url
 
 
@@ -56,7 +65,9 @@ def get_url_link(
     return RedirectResponse(exist_url.url)
 
 def get_all_url(
-    db : Session):
+    db : Session,
+    current_user : Users):
+    logging.info(f"All URL details called : '{current_user.username}")
     return db.query(URL).all()
 
 def get_url_stats(
@@ -71,8 +82,8 @@ def get_url_stats(
             raise HTTPException(status_code = 403 , detail = "!! Access restricted !!")
         
         if url_id is None :
-            # logging.warning(f"{url_id} , url not found")
             raise HTTPException(status_code = 404 , detail = "Url ID not found ")
+
     except Exception as e:
         raise e
     
@@ -84,4 +95,5 @@ def get_url_stats(
     res.append(url_res)
     res.append(logs)
     res.append(analytics)
+    
     return res
