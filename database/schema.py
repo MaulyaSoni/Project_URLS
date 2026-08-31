@@ -38,8 +38,10 @@ class URLStats(Base):
 
 class ClickLog(Base):
     __tablename__ = 'ClickLog_table'
+    
     log_id : Mapped[int] = mapped_column(Integer , autoincrement=True , primary_key=True)
     url_id : Mapped[int] = mapped_column(Integer , ForeignKey("URL_table.url_id") , nullable=False)    
     clicked_at : Mapped[datetime] = mapped_column(DateTime , nullable= False)
-    
+    referer : Mapped[str] = mapped_column(String(255),nullable=False)
+
     url_obj = relationship("URL" , back_populates="logs")

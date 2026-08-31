@@ -4,14 +4,14 @@ from fastapi.security import OAuth2PasswordRequestForm , OAuth2PasswordBearer
 from database.db import get_db , engine
 from database.schema import Base, Users
 from models.message import MessageResponse
-from models.user import UsersResponse , UsersRequest 
+from models.user import UsersResponse , UsersRequest
+from models.stats import StatsResponse 
 from models.url import URLRequest , URLResponse  , URLStatsResponse
 from routes.user import create_admin , create_user , fetch_all_user , delete_user ,login_with_token
-from routes.url import get_url_link , create_url , get_all_url , url_stats 
-from dependencies.context import admin_context , current_user_context , new_user_context 
+from routes.url import get_url_link , create_url , get_all_url , get_url_stats 
 from security.user import get_current_user
-from routes.user import test
-from tasks import record_click_metrics
+from dependencies.context import admin_context , current_user_context , new_user_context , owner_context
+# from routes.user import test
  
 app = FastAPI()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
@@ -76,22 +76,15 @@ def get_url_details_short_link(
     context = Depends(new_user_context)):
     return get_url_link(context["db"] , request , background_tasks , short_link )
 
-#***********************************************
-
-# @app.get("/url/stats/secret/{secret_key}", response_model=list[URLStatsResponse])
-# def get_url_details_secret_key(
-#     secret_key : str , 
-#     # context = Depends(current_user_context)):
-#     context = Depends(current_user_context)
-#     ):
-#     return url_stats_key(context["db"] , secret_key )
+#********************************************************
 
 @app.get("/url/stats/{url_id}")
 def get_url_details(
     url_id : str,
+    # context = Depends(owner_context)
     context = Depends(current_user_context)
     ):
-    return url_stats(context["db"] , url_id , context["current_user"])
+    return get_url_stats(context["db"] , url_id , context["current_user"])
 
 #**********************************************************
 #---------------------------Users ---------------
@@ -123,7 +116,7 @@ def read_root():
     return "Welcome to the URL shortener app"    
 
 
-@app.get("/test", response_model=UsersResponse)
-def test_func(
-    context = Depends(new_user_context)):
-    return test(context["db"])
+# @app.get("/test", response_model=UsersResponse)
+# def test_func(
+#     context = Depends(new_user_context)):
+#     return test(context["db"])

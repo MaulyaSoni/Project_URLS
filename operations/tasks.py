@@ -3,17 +3,20 @@ from sqlalchemy.orm import Session
 from sqlalchemy.dialects.mysql import insert
 from database.schema import URL, ClickLog, URLStats
 
-def record_click_metrics(db: Session, url_id: int, date_time: str ):
+def record_click_metrics(db: Session, url_id: int, date_time: str , referer : str):
     today = date.today()
+    try:
+        new_log = ClickLog(url_id=url_id, clicked_at=date_time , referer =referer)
+        db.add(new_log)
 
-    new_log = ClickLog(url_id=url_id, clicked_at=date_time)
-    db.add(new_log)
-
+    except Exception as e:
+        raise e 
+    
     db.query(URL).filter(URL.url_id == url_id).update({
-        URL.total_clicks: URL.total_clicks
+        URL.total_clicks: URL.total_clicks + 1
     })
 
-    # 3. Upsert Daily Metric Tracker 
+    # 3. Upsert Daily Click Tracker 
     stmt = insert(URLStats).values(
         url_id=url_id,
         date=today,
