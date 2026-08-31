@@ -1,13 +1,16 @@
 import validators
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
-from models.url import URLRequest , URLStatsResponse , URLUserResponse
+from models.url import URLRequest , URLStatsResponse
+from database.schema import ClickLog , URLStats
 from fastapi.exceptions import HTTPException
 from fastapi import Request
 from database.schema import Users , URL
 from fastapi.responses import RedirectResponse
 from operations.key import create_random_key , create_unique_random_short_link
-
+from tasks import record_click_metrics
+from fastapi import BackgroundTasks
+from datetime import datetime
 
 def create_url(
     db : Session,
@@ -35,9 +38,12 @@ def create_url(
     db.commit()
     return new_url
 
+
+
 def get_url_link(
     db : Session ,
     request : Request,
+    background_tasks : BackgroundTasks,
     short_link : str):
 
     exist_url = (db.query(URL).filter(URL.short_link == short_link).order_by(desc(URL.url_id)).first())
@@ -45,7 +51,9 @@ def get_url_link(
     if exist_url is None:
         raise HTTPException(status_code=404,detail=f"{request} not found")
 
+    date_time = datetime.now()
     exist_url.total_clicks = URL.total_clicks + 1
+    background_tasks.add_task(record_click_metrics, db, exist_url.url_id, date_time)
 
     db.commit()
 
@@ -55,32 +63,24 @@ def get_all_url(
     db : Session):
     return db.query(URL).all()
 
-# def url_stats_key(
-#     db : Session,
-#     # secret_key : str
-#     ):
-
-#     existing_url = db.query(URL).filter(URL.secret_key == secret_key).all()
-#     # existing_url = db.get(URL , secret_key)
- 
-#     if existing_url is None:
-#         raise HTTPException(status_code = 404 , detail= "!! Resource not found !! Secret key invalid ")    
-
-#     return existing_url
-
-def url_stats_id(
+def url_stats(
     db : Session,
     url_id : str,
     current_user: Users):
 
     url_res = db.get(URL , url_id)
     # print(url_res.owner_id , current_user.userid, current_user.user_role)
-
-    if url_res.owner_id != current_user.userid and current_user.user_role != 'Admin':
-        raise HTTPException(status_code = 403 , detail = "!! Access restricted !!")
     
-    if url_id is None :
-        # logging.warning(f"{url_id} , url  ")
-        raise HTTPException(status_code = 404 , detail = "Url ID not found ")
-
-    return url_res 
+    try :
+        if url_res.owner_id != current_user.userid and current_user.user_role != 'Admin':
+            raise HTTPException(status_code = 403 , detail = "!! Access restricted !!")
+        
+        if url_id is None :
+            # logging.warning(f"{url_id} , url  ")
+            raise HTTPException(status_code = 404 , detail = "Url ID not found ")
+    except Exception as e:
+        raise e
+    
+    logs = db.query(ClickLog).filter(ClickLog.url_id == url_id).all()
+    analytics = db.query(URLStats).filter(URLStats.url_id == url_id).all()
+    return url_res  , logs , analytics
