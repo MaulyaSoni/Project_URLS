@@ -26,10 +26,10 @@ def login_with_token(
     form_data : OAuth2PasswordRequestForm):
 
     user = authenticate_user(db , form_data.username , form_data.password)
-    if user is None:
+    if not user :
         raise HTTPException(status_code=401,detail="Incorrect username or password")
-    
-    token = create_access_token(user.username)
+ 
+    token = create_access_token(data = {"sub": user.username})
     logging.info(f"Access token created for user : {form_data.username}")
     
     return {"access_token": token,"token_type": "bearer"}
