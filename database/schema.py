@@ -22,7 +22,7 @@ class URL(Base):
     short_link: Mapped[str] = mapped_column(String(200))
     secret_key : Mapped[str] = mapped_column(String(255))
     total_clicks : Mapped[int] = mapped_column(Integer , default=0)
-
+    
     
     # clicks_per_day : Mapped[int] = mapped_column(Integer , default=0) 
 
