@@ -77,13 +77,13 @@ def get_url_details_short_link(
 
 #***********************************************
 
-@app.get("/url/stats/secret/{secret_key}", response_model=list[URLStatsResponse])
-def get_url_details_secret_key(
-    secret_key : str , 
-    # context = Depends(current_user_context)):
-    context = Depends(current_user_context)
-    ):
-    return url_stats_key(context["db"] , secret_key )
+# @app.get("/url/stats/secret/{secret_key}", response_model=list[URLStatsResponse])
+# def get_url_details_secret_key(
+#     secret_key : str , 
+#     # context = Depends(current_user_context)):
+#     context = Depends(current_user_context)
+#     ):
+#     return url_stats_key(context["db"] , secret_key )
 
 @app.get("/url/stats/id/{url_id}" , response_model=list[URLStatsResponse])
 def get_url_details_url_id(

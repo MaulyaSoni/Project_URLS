@@ -20,7 +20,6 @@ class URL(Base):
     url : Mapped[str] = mapped_column(String(500))
     owner_id : Mapped[int] = mapped_column(Integer)
     short_link: Mapped[str] = mapped_column(String(200))
-    secret_key : Mapped[str] = mapped_column(String(255))
     total_clicks : Mapped[int] = mapped_column(Integer , default=0)
     
     

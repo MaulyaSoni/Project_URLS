@@ -23,12 +23,12 @@ def create_url(
         raise HTTPException (status_code = 409 ,detail=f"""You already have created link for this,Short link for that is {existing_url.short_link}""")
    
     short_link = create_unique_random_short_link(db)
-    secret_key = create_random_key(length = 10)
+    # secret_key = create_random_key(length = 10)
 
     new_url = URL(
         url = url_req.url,
         short_link = short_link,
-        secret_key = secret_key,
+        # secret_key = secret_key,
         owner_id = current_user.userid
     )
     db.add(new_url)
@@ -55,17 +55,18 @@ def get_all_url(
     db : Session):
     return db.query(URL).all()
 
-def url_stats_key(
-    db : Session,
-    secret_key : str):
+# def url_stats_key(
+#     db : Session,
+#     # secret_key : str
+#     ):
 
-    existing_url = db.query(URL).filter(URL.secret_key == secret_key).all()
-    # existing_url = db.get(URL , secret_key)
+#     existing_url = db.query(URL).filter(URL.secret_key == secret_key).all()
+#     # existing_url = db.get(URL , secret_key)
  
-    if existing_url is None:
-        raise HTTPException(status_code = 404 , detail= "!! Resource not found !! Secret key invalid ")    
+#     if existing_url is None:
+#         raise HTTPException(status_code = 404 , detail= "!! Resource not found !! Secret key invalid ")    
 
-    return existing_url
+#     return existing_url
 
 def url_stats_id(
     db : Session,
