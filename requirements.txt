@@ -1,0 +1,9 @@
+PyJWT
+pwdlib[argon-2]
+pytest
+alembic
+sqlalchemy
+fastapi
+python-dotenv
+uvicorn
+validators
