@@ -78,14 +78,18 @@ def get_url_stats(
     url_res = db.get(URL , url_id)
     
     try :
-        if url_res.owner_id != current_user.userid and current_user.user_role != 'Admin':
-            raise HTTPException(status_code = 403 , detail = "!! Access restricted !!")
         
         if url_id is None :
             raise HTTPException(status_code = 404 , detail = "Url ID not found ")
 
-    except Exception as e:
-        raise e
+        if url_res is None:
+            raise HTTPException(status_code = 404 , detail = "!! Invalid URL ID !!")
+            
+        if url_res.owner_id != current_user.userid and current_user.user_role != 'Admin':
+            raise HTTPException(status_code = 403 , detail = "!! Access restricted !!")
+
+    except (AttributeError , Exception , ValueError) as e:
+        return e
     
     logs = db.query(ClickLog).filter(ClickLog.url_id == url_id).all()
 

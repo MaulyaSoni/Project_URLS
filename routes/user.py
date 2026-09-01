@@ -8,6 +8,8 @@ from database.schema import Users
 from models.user import UsersRequest 
 from security.user import authenticate_user , create_access_token
 from security.password import generate_hash_password
+from email_validator import validate_email , EmailNotValidError
+
 
 # from sqlalchemy import select
 
@@ -40,23 +42,30 @@ def create_user(
     db: Session,
     user_data: UsersRequest):
 
+
+    try:
+        valid_email = validate_email(user_data.email, check_deliverability=True)
+  
+    except (EmailNotValidError,Exception) as e:
+        raise HTTPException(status_code = 400 , detail=f"!! Invalid email !!, {e}")
+
     existing_user = (db.query(Users).filter(Users.email == user_data.email).first())
 
     if existing_user:
         logging.warning("Duplicate User details input ")
         raise HTTPException(status_code=409,detail="User already exists")
- 
+
     new_user = Users(
         username=user_data.username,
         hashed_password=generate_hash_password(user_data.password),
-        email = user_data.email,
+        email = valid_email.email,
         user_role="user"
     )
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
 
-    logging.info(f"{user_data.id} New User created")
+    logging.info(f"{user_data.username} New User created")
     return new_user
 
 def create_admin(
@@ -80,15 +89,15 @@ def create_admin(
     )
     db.add(new_user)
     db.commit()
-    logging.info(f"New admin : {user_data.id} created")
+    logging.info(f"New admin : {user_data.userid} created")
     return new_user
 
 #-------------------------------------------------------------------
 
 def fetch_all_user(
-    db:Session):
-    user_log : Users
-    logging.info(f"Fetch all users call : '{user_log.id}'")
+    db:Session,
+    user_log : Users):
+    logging.info(f"Fetch all users call : '{user_log.userid}'")
     return db.query(Users).all()
 
 
@@ -105,5 +114,5 @@ def delete_user(
     
     db.delete(user)
     db.commit()
-    logging.info(f"{userid} , user deleted : '{current_user.username}'")
+    logging.info(f"{userid} , user deleted by : '{current_user.username}'")
     return {"message" : f"{userid} , deleted successfully"}

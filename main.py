@@ -49,7 +49,7 @@ def login_with_token_generation(
 
 #----------------------------------------URL-------------------------------
 @app.post("/url" , response_model = URLResponse , status_code=201)
-def create_url_func(
+def create_new_url(
     req : URLRequest,
     context = Depends(current_user_context)
 ):
@@ -59,7 +59,7 @@ def create_url_func(
 #------------------------------READ---------------------
 
 @app.get("/url" , response_model = list[URLStatsResponse])
-def get_all_url_func(
+def fetch_all_url(
     context = Depends(admin_context)
 ):
     return get_all_url(context["db"],context["current_user"])
@@ -67,7 +67,7 @@ def get_all_url_func(
 #************************************************************
 
 @app.get("/url/{short_link}")
-def get_url_details_short_link(
+def get_url_from_short_link(
     short_link : str , 
     request : Request,
     background_tasks : BackgroundTasks,
@@ -78,7 +78,7 @@ def get_url_details_short_link(
 #********************************************************
 
 @app.get("/url/stats/{url_id}")
-def get_url_details(
+def get_url__stats_details(
     url_id : str,
     context = Depends(current_user_context)
 ):
@@ -96,16 +96,15 @@ def get_my_info(
 def get_all_users(
     context = Depends(admin_context)
 ):
-    return fetch_all_user(context["db"])
+    return fetch_all_user(context["db"] , context["current_user"])
 
 #---------------------------delete-------------------------
 @app.delete("/users/delete/{userid}" , response_model = MessageResponse , status_code = 200)
-def delete_user_func(
+def delete_single_user(
     userid : str,
     context = Depends(admin_context)
 ):
     return delete_user(context["db"] , userid , context["current_user"])
-
 
 
 @app.get("/")
