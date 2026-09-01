@@ -42,8 +42,6 @@ def create_url(
     logging.info(f"New short link generated : '{current_user.userid}'")
     return new_url
 
-
-
 def get_url_link(
     db : Session ,
     request : Request,
@@ -57,7 +55,7 @@ def get_url_link(
 
     referer = request.headers.get("referer")
     date_time = datetime.now()
-    # print(referer)
+
     if referer is None: 
         referer = "null" 
 
@@ -66,6 +64,39 @@ def get_url_link(
     db.commit()
 
     return RedirectResponse(exist_url.url)
+
+def get_user_urls(
+    db : Session,
+    current_user : Users):
+    owner_id = current_user.userid
+    if owner_id is None:
+        raise HTTPException(status_code = 404 , detail = "No details found")
+    # data = db.get(URL , owner_id)
+    data = db.query(URL).filter(URL.owner_id == current_user.userid).all()
+    try : 
+        if data is None:
+            raise HTTPException(status_code = 200 , detail = "User don't have created any URLs")
+    except (Exception , AttributeError) as e:
+        raise e
+
+    return data
+
+def get_dashboard(
+    db : Session,
+    current_user : Users):
+    owner_id = current_user.userid
+    if owner_id is None:
+        raise HTTPException(status_code = 404 , detail = "No details found")
+
+    data = db.query(URL).all()
+
+    logs = db.query(ClickLog).all()
+
+    analytics = db.query(URLStats).all()
+
+    data.append(logs)
+    data.append(analytics)
+    return data
 
 def get_all_url(
     db : Session,
@@ -130,3 +161,12 @@ def delete_url(
     db.commit()
     logging.info(f"{url_id} , url deleted by : '{current_user.username}'")
     return {"message" : f"{url_id} deleted successfully"}
+
+
+# def delete_all(
+#     db : Session,
+#     current_user : Users
+# ):
+#     c1 = db.query(URL).all()
+#     db.delete(c1)
+#     db.commit()

@@ -23,16 +23,9 @@ def current_user_context(
 
     return {'db' : db , 'current_user' : current_user}
 
-def owner_context (
-    db : Session = Depends(get_db),
-    current_user : Users = Depends(get_current_user)
-    ):
-    if url_res.owner_id != current_user.userid and current_user.user_role != 'Admin':
-        raise HTTPException(status_code = 403 , detail = "!! Access restricted !!")
-
-    return {'db' : db , 'current_user' : current_user} 
-    
 def new_user_context(
     db : Session = Depends(get_db)    
     ):
+    
     return {'db' : db}
+ 
