@@ -8,7 +8,7 @@ def record_click_metrics(db: Session, url_id: int, date_time: str , referer : st
 
     # Log table updation
     try:
-        new_log = ClickLog(url_id=url_id, clicked_at=date_time , referer =referer)
+        new_log = ClickLog(url_id=url_id, clicked_at=date_time , referer = referer)
         db.add(new_log)
 
     except Exception as e:
@@ -28,8 +28,8 @@ def record_click_metrics(db: Session, url_id: int, date_time: str , referer : st
     # If the combination of url_id and date exists, add 1 to clicks_per_day
     
     update_st = stmt.on_duplicate_key_update(
-        clicks_per_day = URLStats.clicks_per_day + stmt.inserted.clicks_per_day
+        clicks_per_day = URLStats.clicks_per_day + 1
     )
-
+    # print(update_st)
     db.execute(update_st)
     db.commit()

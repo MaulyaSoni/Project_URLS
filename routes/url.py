@@ -54,11 +54,15 @@ def get_url_link(
 
     if exist_url is None:
         raise HTTPException(status_code=404,detail=f"{request} not found")
+
     referer = request.headers.get("referer")
     date_time = datetime.now()
-   
-    background_tasks.add_task(record_click_metrics, db, exist_url.url_id, date_time , referer)
+    # print(referer)
+    if referer is None: 
+        referer = "null" 
 
+    background_tasks.add_task(record_click_metrics, db, exist_url.url_id, date_time , referer)
+    # print(exist_url.total_clicks)
     db.commit()
 
     return RedirectResponse(exist_url.url)
