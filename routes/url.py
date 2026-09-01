@@ -1,13 +1,12 @@
 import validators
+from datetime import datetime
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
-from fastapi import BackgroundTasks
+from fastapi import BackgroundTasks , Request
 from fastapi.exceptions import HTTPException
-from fastapi import Request
 from fastapi.responses import RedirectResponse
-from datetime import datetime
 from database.schema import Users , URL , ClickLog , URLStats
-from models.url import URLRequest , URLStatsResponse
+from models.url import URLRequest 
 from operations.key import create_unique_random_short_link
 from operations.tasks import record_click_metrics
 import logging
@@ -80,10 +79,10 @@ def get_url_stats(
     try :
         
         if url_id is None :
-            raise HTTPException(status_code = 404 , detail = "Url ID not found ")
+            raise HTTPException(status_code = 404 , detail = "Invalid ID ")
 
         if url_res is None:
-            raise HTTPException(status_code = 404 , detail = "!! Invalid URL ID !!")
+            raise HTTPException(status_code = 404 , detail = "!! URL ID not found !!")
             
         if url_res.owner_id != current_user.userid and current_user.user_role != 'Admin':
             raise HTTPException(status_code = 403 , detail = "!! Access restricted !!")
@@ -101,3 +100,29 @@ def get_url_stats(
     res.append(analytics)
     
     return res
+
+
+def delete_url(
+    db : Session,
+    url_id : str,
+    current_user : str
+):
+    url = db.get(URL , url_id)
+
+    try :
+        if url_id is None :
+            raise HTTPException(status_code = 404 , detail = "Invalid URL ID")
+
+        if url is None:
+            raise HTTPException(status_code = 404 , detail = "Url ID not found ")
+            
+        if url.owner_id != current_user.userid and current_user.user_role != 'Admin':
+            raise HTTPException(status_code = 403 , detail = "!! Access restricted !!")
+
+    except (AttributeError , Exception , ValueError) as e:
+        raise e
+
+    db.delete(url)
+    db.commit()
+    logging.info(f"{url_id} , url deleted by : '{current_user.username}'")
+    return {"message" : f"{url_id} deleted successfully"}

@@ -8,13 +8,14 @@ from models.user import UsersResponse , UsersRequest
 from models.stats import StatsResponse 
 from models.url import URLRequest , URLResponse  , URLStatsResponse
 from routes.user import create_admin , create_user , fetch_all_user , delete_user ,login_with_token
-from routes.url import get_url_link , create_url , get_all_url , get_url_stats 
+from routes.url import get_url_link , create_url , get_all_url , get_url_stats , delete_url
 from security.user import get_current_user
 from dependencies.context import admin_context , current_user_context , new_user_context , owner_context
 
  
 app = FastAPI()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+
 #---------------events-------------------------------------------------------------------
 
 @app.on_event("startup")
@@ -105,6 +106,13 @@ def delete_single_user(
     context = Depends(admin_context)
 ):
     return delete_user(context["db"] , userid , context["current_user"])
+
+@app.delete("/url/delete/{url_id}" , response_model = MessageResponse , status_code = 200)
+def delete_single_url(
+    url_id : str,
+    context = Depends(current_user_context)
+):
+    return delete_url(context["db"] , url_id , context["current_user"])
 
 
 @app.get("/")

@@ -10,9 +10,6 @@ from security.user import authenticate_user , create_access_token
 from security.password import generate_hash_password
 from email_validator import validate_email , EmailNotValidError
 
-
-# from sqlalchemy import select
-
 load_dotenv()
 ADMIN_KEY = os.getenv("ADMIN_KEY")
 
@@ -41,7 +38,6 @@ def login_with_token(
 def create_user(
     db: Session,
     user_data: UsersRequest):
-
 
     try:
         valid_email = validate_email(user_data.email, check_deliverability=True)
@@ -89,7 +85,7 @@ def create_admin(
     )
     db.add(new_user)
     db.commit()
-    logging.info(f"New admin : {user_data.userid} created")
+    logging.info(f"New admin : {user_data.username} created")
     return new_user
 
 #-------------------------------------------------------------------
@@ -109,8 +105,17 @@ def delete_user(
     current_user : Users):
     
     user = db.get(Users , userid)
-    if user is None:
-        raise HTTPException(status_code = 404 , detail="user not found")
+   
+    try :
+
+        if userid is None :
+            raise HTTPException(status_code = 404 , detail = "Invalid UserID")
+
+        if user is None:
+            raise HTTPException(status_code = 404 , detail = "UserID not found ")
+     
+    except (AttributeError , Exception , ValueError) as e:
+        raise e
     
     db.delete(user)
     db.commit()
