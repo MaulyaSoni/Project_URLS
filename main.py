@@ -1,16 +1,16 @@
 from sqlalchemy.orm import Session
-from fastapi import FastAPI, HTTPException , Request, Depends , BackgroundTasks
+from fastapi import FastAPI , Request, Depends , BackgroundTasks
 from fastapi.security import OAuth2PasswordRequestForm , OAuth2PasswordBearer
 from database.db import get_db , engine
 from database.schema import Base, Users
 from models.message import MessageResponse
 from models.user import UsersResponse , UsersRequest
-from models.stats import StatsResponse 
 from models.url import URLRequest , URLResponse  , URLStatsResponse
 from routes.user import create_admin , create_user , fetch_all_user , delete_user ,login_with_token
-from routes.url import get_url_link , create_url , get_all_url , get_url_stats , delete_url
+from routes.url import get_url_link , get_all_url , get_url_stats 
+from routes.url import create_url , delete_url , get_user_urls , get_dashboard
 from operations.user import get_current_user
-from dependencies.context import admin_context , current_user_context , new_user_context , owner_context
+from dependencies.context import admin_context , current_user_context , new_user_context
 
  
 app = FastAPI()
@@ -68,13 +68,26 @@ def fetch_all_url(
 #************************************************************
 
 @app.get("/url/{short_link}")
-def get_url_from_short_link(
+def fetch_url_from_short_link(
     short_link : str , 
     request : Request,
     background_tasks : BackgroundTasks,
     context = Depends(new_user_context)
 ):
     return get_url_link(context["db"] , request , background_tasks , short_link )
+
+@app.get("/my/urls/" , response_model= list[URLResponse])
+def fetch_user_urls(
+    context = Depends(current_user_context)
+    ):
+    return get_user_urls(context["db"] , context["current_user"])
+
+@app.get("/dashboard")
+def fetch_dashboard(
+    context = Depends(admin_context)
+    ):
+    return get_dashboard(context["db"] , context["current_user"])
+
 
 #********************************************************
 
@@ -114,6 +127,11 @@ def delete_single_url(
 ):
     return delete_url(context["db"] , url_id , context["current_user"])
 
+# @app.delete("/delete/all")
+# def del_all(
+#     context = Depends(admin_context)
+# ):
+#     return delete_all(context["db"],context["current_user"])
 
 @app.get("/")
 def read_root():
