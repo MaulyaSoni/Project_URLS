@@ -6,8 +6,8 @@ from fastapi import HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from database.schema import Users
 from models.user import UsersRequest 
-from security.user import authenticate_user , create_access_token
-from security.password import generate_hash_password
+from operations.user import authenticate_user , create_access_token
+from operations.password import generate_hash_password
 from email_validator import validate_email , EmailNotValidError
 
 load_dotenv()
@@ -49,7 +49,7 @@ def create_user(
 
     if existing_user:
         logging.warning("Duplicate User details input ")
-        raise HTTPException(status_code=409,detail="User already exists")
+        raise HTTPException(status_code=409,detail="User (UserEmail) already exists")
 
     new_user = Users(
         username=user_data.username,

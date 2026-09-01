@@ -9,7 +9,7 @@ from models.stats import StatsResponse
 from models.url import URLRequest , URLResponse  , URLStatsResponse
 from routes.user import create_admin , create_user , fetch_all_user , delete_user ,login_with_token
 from routes.url import get_url_link , create_url , get_all_url , get_url_stats , delete_url
-from security.user import get_current_user
+from operations.user import get_current_user
 from dependencies.context import admin_context , current_user_context , new_user_context , owner_context
 
  
@@ -42,7 +42,7 @@ def register_admin(
     return create_admin(context["db"] ,user_data , admin_key)
 
 @app.post("/login")
-def login_with_token_generation(
+def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     context = Depends(new_user_context)
 ):
