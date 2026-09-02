@@ -7,3 +7,7 @@ fastapi
 python-dotenv
 uvicorn
 validators
+python-multipart
+uv
+pydantic[email]
+pymysql
