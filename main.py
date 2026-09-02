@@ -194,7 +194,7 @@ def fetch_dashboard(
 #********************************************************
 
 @app.get("/url/stats/{url_id}")
-def get_url__stats_details(
+def get_url_stats_details(
     url_id : str,
     context = Depends(current_user_context)
 ):
