@@ -38,7 +38,7 @@ def create_url(
         owner_id = current_user.userid
     )
     db.add(new_url)
-    db.commit()
+    
     logging.info(f"New short link generated : '{current_user.userid}'")
     return new_url
 
@@ -61,7 +61,7 @@ def get_url_link(
 
     background_tasks.add_task(record_click_metrics, db, exist_url.url_id, date_time , referer)
     # print(exist_url.total_clicks)
-    db.commit()
+    db.flush()
 
     return RedirectResponse(exist_url.url)
 
@@ -71,7 +71,7 @@ def get_user_urls(
     owner_id = current_user.userid
     if owner_id is None:
         raise HTTPException(status_code = 404 , detail = "No details found")
-    # data = db.get(URL , owner_id)
+ 
     data = db.query(URL).filter(URL.owner_id == current_user.userid).all()
     try : 
         if data is None:

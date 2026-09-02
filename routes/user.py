@@ -41,12 +41,12 @@ def create_user(
 
     try:
         valid_email = validate_email(user_data.email, check_deliverability=True)
-  
+        clean_email = str(valid_email.email).strip().lower()
     except (EmailNotValidError,Exception) as e:
         raise HTTPException(status_code = 400 , detail=f"!! Invalid email !!, {e}")
 
-    existing_user = (db.query(Users).filter(Users.email == user_data.email).first())
-
+    existing_user = (db.query(Users).filter(Users.email == clean_email).first())
+  
     if existing_user:
         logging.warning("Duplicate User details input ")
         raise HTTPException(status_code=409,detail="User (UserEmail) already exists")
@@ -58,9 +58,8 @@ def create_user(
         user_role="user"
     )
     db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-
+    # db.flush()
+   
     logging.info(f"{user_data.username} New User created")
     return new_user
 
@@ -70,10 +69,17 @@ def create_admin(
     admin_key : str
     ):
 
+    try:
+        valid_email = validate_email(user_data.email, check_deliverability=True)
+  
+    except (EmailNotValidError,Exception) as e:
+        raise HTTPException(status_code = 400 , detail=f"!! Invalid email !!, {e}")
+
     if admin_key != ADMIN_KEY:
         raise HTTPException(status_code = 403 , detail="You don't have valid ADMIN KEY to create admin")
     
     existing_user = (db.query(Users).filter(Users.email == user_data.email).first())
+    
     if existing_user and existing_user.user_role == 'Admin':
         raise HTTPException(status_code = 409 , detail = "Admin already exists")
 
@@ -84,7 +90,8 @@ def create_admin(
         user_role="Admin"
     )
     db.add(new_user)
-    db.commit()
+    # db.flush()
+
     logging.info(f"New admin : {user_data.username} created")
     return new_user
 
@@ -118,6 +125,6 @@ def delete_user(
         raise e
     
     db.delete(user)
-    db.commit()
+    # db.commit()
     logging.info(f"{userid} , user deleted by : '{current_user.username}'")
     return {"message" : f"{userid} , deleted successfully"}
