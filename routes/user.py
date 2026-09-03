@@ -13,11 +13,6 @@ from email_validator import validate_email , EmailNotValidError
 load_dotenv()
 ADMIN_KEY = os.getenv("ADMIN_KEY")
 
-logging.basicConfig(
-    filename="Log_employee_project.log",
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-)
 #----------------------------------------------------
 
 def login_with_token(
@@ -58,7 +53,6 @@ def create_user(
         user_role="user"
     )
     db.add(new_user)
-    # db.flush()
    
     logging.info(f"{user_data.username} New User created")
     return new_user
@@ -90,7 +84,6 @@ def create_admin(
         user_role="Admin"
     )
     db.add(new_user)
-    # db.flush()
 
     logging.info(f"New admin : {user_data.username} created")
     return new_user

@@ -11,12 +11,6 @@ from operations.key import create_unique_random_short_link
 from operations.tasks import record_click_metrics
 import logging
 
-logging.basicConfig(
-    filename="Log_employee_project.log",
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-)
-
 def create_url(
     db : Session,
     url_req : URLRequest,
@@ -56,11 +50,11 @@ def get_url_link(
     referer = request.headers.get("referer") or "null"
     date_time = datetime.now()
 
-    background_tasks.add_task(record_click_metrics, db, exist_url.url_id, date_time , referer)
+    background_tasks.add_task(record_click_metrics, exist_url.url_id, date_time , referer)
     # print(exist_url.total_clicks)
-    db.flush()
-
-    return RedirectResponse(exist_url.url)
+    # db.flush()
+    logging.info("comes the redirect response step ")
+    return RedirectResponse(url = exist_url.url , status_code = 303)
 
 def get_user_urls(
     db : Session,

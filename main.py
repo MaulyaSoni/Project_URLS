@@ -3,7 +3,7 @@ from fastapi.exceptions import HTTPException
 from sqlalchemy.exc import IntegrityError
 from fastapi import FastAPI , Request, Depends , BackgroundTasks
 from fastapi.security import OAuth2PasswordRequestForm , OAuth2PasswordBearer
-from database.db import get_db , engine , SessionLocal
+from database.db import get_db , engine
 from database.schema import Base, Users
 from models.message import MessageResponse
 from models.user import UsersResponse , UsersRequest
@@ -13,7 +13,13 @@ from routes.url import get_url_link , get_all_url , get_url_stats
 from routes.url import create_url , delete_url , get_user_urls , get_dashboard
 from operations.user import get_current_user
 from dependencies.context import admin_context , current_user_context , new_user_context
+import logging
 
+logging.basicConfig(
+    filename="Log_employee_project.log",
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+)
  
 app = FastAPI()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
@@ -28,9 +34,7 @@ def create_tables():
 #----------------------------------CREATE----------------------------------
 
 #-----------------------------------USER-------------------------------- 
-@app.post("/user"
- , response_model = UsersResponse , status_code=201)
- 
+@app.post("/user", response_model = UsersResponse , status_code=201)
 def register_user(
     user_data: UsersRequest,
     db: Session = Depends(get_db)
@@ -61,7 +65,7 @@ def register_admin(
     db: Session = Depends(get_db) 
 ): 
     try:
-        new_user = create_admin(db , user_data)
+        new_user = create_admin(db , user_data , admin_key)
         db.flush()
         db.commit()
         return {
@@ -149,15 +153,13 @@ def fetch_url_from_short_link(
     db = context["db"]
     try:
         og_url = get_url_link(context["db"] , request , background_tasks , short_link )
-        db.commit()
+        # db.commit()
         return og_url
 
     except Exception as e:
-        db.rollback()
+        # db.rollback()
         raise HTTPException(status_code=500 , detail={e})
 
-    finally:
-        db.close()
 
 @app.get("/my/urls/" , response_model= list[URLResponse])
 def fetch_user_urls(
@@ -225,6 +227,7 @@ def get_all_users(
     db = context["db"]
     try:
         all_users = fetch_all_user(context["db"] , context["current_user"])
+        return all_users
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500 , detail={e})
