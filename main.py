@@ -39,7 +39,7 @@ def register_user(
     user_data: UsersRequest,
     db: Session = Depends(get_db)
 ):
-    db = context["db"]
+    db = db
     try:
         new_user = create_user(db , user_data)
         db.flush()
@@ -67,7 +67,7 @@ def register_admin(
     admin_key = str,
     db: Session = Depends(get_db) 
 ): 
-    db = context["db"]
+    db = db
     try:
         new_user = create_admin(db , user_data , admin_key)
         db.flush()
@@ -93,7 +93,7 @@ def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db) 
 ):
-    db = context["db"]
+    db = db
     try:
         login_token = login_with_token(db, form_data)
         return login_token
