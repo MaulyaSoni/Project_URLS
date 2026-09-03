@@ -10,6 +10,7 @@ from models.url import URLRequest
 from operations.key import create_unique_random_short_link
 from operations.tasks import record_click_metrics
 import logging
+from sqlalchemy.exc import IntegrityError
 
 def create_url(
     db : Session,
@@ -45,14 +46,13 @@ def get_url_link(
     exist_url = (db.query(URL).filter(URL.short_link == short_link).order_by(desc(URL.url_id)).first())
 
     if exist_url is None:
-        raise HTTPException(status_code=404,detail=f"{request} not found")
+        raise HTTPException(status_code=404,detail=f"Invalid Link , can't redirect to URL")
 
     referer = request.headers.get("referer") or "null"
     date_time = datetime.now()
 
     background_tasks.add_task(record_click_metrics, exist_url.url_id, date_time , referer)
 
-    logging.info("comes the redirect response step ")
     return RedirectResponse(url = exist_url.url , status_code = 303)
 
 def get_user_urls(
@@ -133,15 +133,33 @@ def delete_url(
         raise HTTPException(status_code = 404 , detail = "Invalid URL ID")
 
     if url is None:
-        raise HTTPException(status_code = 404 , detail = "Url ID not found ")
+        raise HTTPException(status_code = 404 , detail = "URL ID not found")
         
     if url.owner_id != current_user.userid and current_user.user_role != 'Admin':
         raise HTTPException(status_code = 403 , detail = "!! Access restricted !!")
 
-    db.delete(url)
-    db.commit()
-    logging.info(f"{url_id} , url deleted by : '{current_user.username}'")
-    return {"message" : f"{url_id} deleted successfully"}
+    try:
+    
+        db.query(ClickLog).filter(ClickLog.url_id == url_id).delete(
+            synchronize_session = False)
+
+        db.query(URLStats).filter(URLStats.url_id == url_id).delete(
+            synchronize_session = False)
+        
+        db.delete(url)
+        db.commit()
+    
+    except IntegrityError as e:
+        db.rollback()
+        raise HTTPException(status_code = 409 , detail=str(e))
+
+
+    except Exception as e:
+        db.rollback()
+        raise 
+
+    logging.info(f"ID {url_id} , url deleted by : '{current_user.username}'")
+    return {"message" : f"ID - {url_id} Deleted successfully"}
 
 
 # def delete_all(
