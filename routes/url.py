@@ -54,7 +54,7 @@ def get_url_link(
     if referer is None: 
         referer = "null" 
 
-    background_tasks.add_task(record_click_metrics, db, exist_url.url_id, date_time , referer)
+    background_tasks.add_task(record_click_metrics, exist_url.url_id, date_time , referer)
     # print(exist_url.total_clicks)
     db.commit()
 
