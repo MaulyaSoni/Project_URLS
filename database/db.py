@@ -18,7 +18,10 @@ def get_db():
     db = SessionLocal()
     try:
         yield db
+<<<<<<< HEAD
         db.commit() 
+=======
+>>>>>>> work
     except Exception:
         db.rollback()
         raise

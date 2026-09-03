@@ -13,11 +13,6 @@ from email_validator import validate_email , EmailNotValidError
 load_dotenv()
 ADMIN_KEY = os.getenv("ADMIN_KEY")
 
-logging.basicConfig(
-    filename="Log_employee_project.log",
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-)
 #----------------------------------------------------
 
 def login_with_token(
@@ -42,7 +37,12 @@ def create_user(
     try:
         valid_email = validate_email(user_data.email, check_deliverability=True)
         clean_email = str(valid_email.email).strip().lower()
+<<<<<<< HEAD
     except (EmailNotValidError,Exception) as e:
+=======
+
+    except EmailNotValidError as e:
+>>>>>>> work
         raise HTTPException(status_code = 400 , detail=f"!! Invalid email !!, {e}")
 
     existing_user = (db.query(Users).filter(Users.email == clean_email).first())
@@ -58,7 +58,10 @@ def create_user(
         user_role="user"
     )
     db.add(new_user)
+<<<<<<< HEAD
     # db.flush()
+=======
+>>>>>>> work
    
     logging.info(f"{user_data.username} New User created")
     return new_user
@@ -72,7 +75,11 @@ def create_admin(
     try:
         valid_email = validate_email(user_data.email, check_deliverability=True)
   
+<<<<<<< HEAD
     except (EmailNotValidError,Exception) as e:
+=======
+    except EmailNotValidError as e:
+>>>>>>> work
         raise HTTPException(status_code = 400 , detail=f"!! Invalid email !!, {e}")
 
     if admin_key != ADMIN_KEY:
@@ -90,7 +97,10 @@ def create_admin(
         user_role="Admin"
     )
     db.add(new_user)
+<<<<<<< HEAD
     # db.flush()
+=======
+>>>>>>> work
 
     logging.info(f"New admin : {user_data.username} created")
     return new_user
@@ -125,6 +135,10 @@ def delete_user(
         raise e
     
     db.delete(user)
+<<<<<<< HEAD
     # db.commit()
+=======
+
+>>>>>>> work
     logging.info(f"{userid} , user deleted by : '{current_user.username}'")
     return {"message" : f"{userid} , deleted successfully"}
