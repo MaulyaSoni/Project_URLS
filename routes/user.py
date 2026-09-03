@@ -37,7 +37,8 @@ def create_user(
     try:
         valid_email = validate_email(user_data.email, check_deliverability=True)
         clean_email = str(valid_email.email).strip().lower()
-    except (EmailNotValidError,Exception) as e:
+
+    except EmailNotValidError as e:
         raise HTTPException(status_code = 400 , detail=f"!! Invalid email !!, {e}")
 
     existing_user = (db.query(Users).filter(Users.email == clean_email).first())
@@ -66,7 +67,7 @@ def create_admin(
     try:
         valid_email = validate_email(user_data.email, check_deliverability=True)
   
-    except (EmailNotValidError,Exception) as e:
+    except EmailNotValidError as e:
         raise HTTPException(status_code = 400 , detail=f"!! Invalid email !!, {e}")
 
     if admin_key != ADMIN_KEY:
@@ -118,6 +119,6 @@ def delete_user(
         raise e
     
     db.delete(user)
-    # db.commit()
+
     logging.info(f"{userid} , user deleted by : '{current_user.username}'")
     return {"message" : f"{userid} , deleted successfully"}

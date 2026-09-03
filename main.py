@@ -39,6 +39,7 @@ def register_user(
     user_data: UsersRequest,
     db: Session = Depends(get_db)
 ):
+    db = context["db"]
     try:
         new_user = create_user(db , user_data)
         db.flush()
@@ -49,6 +50,8 @@ def register_user(
             "email":new_user.email,
             "user_role":new_user.user_role
         }
+    except HTTPException:
+        raise
 
     except Exception as e:
         db.rollback()
@@ -64,6 +67,7 @@ def register_admin(
     admin_key = str,
     db: Session = Depends(get_db) 
 ): 
+    db = context["db"]
     try:
         new_user = create_admin(db , user_data , admin_key)
         db.flush()
@@ -74,6 +78,8 @@ def register_admin(
             "email":new_user.email,
             "user_role":new_user.user_role
         }
+    except HTTPException:
+        raise
 
     except Exception as e:
         db.rollback()
@@ -87,9 +93,13 @@ def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db) 
 ):
+    db = context["db"]
     try:
         login_token = login_with_token(db, form_data)
         return login_token
+
+    except HTTPException:
+        raise
 
     except Exception as e:
         db.rollback()
@@ -106,7 +116,7 @@ def create_new_url(
 ):
     db = context["db"]
     try:
-        new_url =  create_url(context["db"], req ,context["current_user"])
+        new_url =  create_url(db, req ,context["current_user"])
         db.flush()
         db.commit()
 
@@ -116,30 +126,32 @@ def create_new_url(
             "short_link":new_url.short_link,
             "owner_id":new_url.owner_id
         }   
+    except HTTPException:
+        raise
 
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500 , detail={e})
+        raise HTTPException(status_code=500 , detail=str(e))
 
     finally:
         db.close()       
+
 #------------------------------READ---------------------
 
 @app.get("/url" , response_model = list[URLStatsResponse])
 def fetch_all_url(
     context = Depends(admin_context)
 ):
-    db = context["db"]
     try:
         urls = get_all_url(context["db"],context["current_user"])
         return urls
 
     except Exception as e:
-        db.rollback()
+        # db.rollback()
         raise HTTPException(status_code=500 , detail={e})
 
-    finally:
-        db.close()     
+    # finally:
+    #     db.close()     
 
 #************************************************************
 
@@ -156,6 +168,9 @@ def fetch_url_from_short_link(
         # db.commit()
         return og_url
 
+    except HTTPException:
+        raise
+
     except Exception as e:
         # db.rollback()
         raise HTTPException(status_code=500 , detail={e})
@@ -165,33 +180,37 @@ def fetch_url_from_short_link(
 def fetch_user_urls(
     context = Depends(current_user_context)
 ):
-    db = context["db"]
     try:
         my_urls = get_user_urls(context["db"] , context["current_user"])
         return my_urls
 
+    except HTTPException:
+        raise
+
     except Exception as e:
-        db.rollback()
+        # db.rollback()
         raise HTTPException(status_code=500 , detail={e})
 
-    finally:
-        db.close()
+    # finally:
+    #     db.close()
 
 @app.get("/dashboard")
 def fetch_dashboard(
     context = Depends(admin_context)
 ):
-    db = context["db"]
     try:
         dashboard = get_dashboard(context["db"] , context["current_user"])
         return dashboard
 
+    except HTTPException:
+        raise
+
     except Exception as e:
-        db.rollback()
+        # db.rollback()
         raise HTTPException(status_code=500 , detail={e})
 
-    finally:
-        db.close()
+    # finally:
+    #     db.close()
 
 #********************************************************
 
@@ -200,17 +219,19 @@ def get_url_stats_details(
     url_id : str,
     context = Depends(current_user_context)
 ):
-    db = context["db"]
     try:
         stats = get_url_stats(context["db"] , url_id , context["current_user"])
         return stats
 
+    except HTTPException:
+        raise
+
     except Exception as e:
-        db.rollback()
+        # db.rollback()
         raise HTTPException(status_code=500 , detail={e})
 
-    finally:
-        db.close()
+    # finally:
+    #     db.close()
 
 #---------------------------Users ---------------
 
@@ -224,15 +245,16 @@ def get_my_info(
 def get_all_users(
     context = Depends(admin_context)
 ):
-    db = context["db"]
     try:
         all_users = fetch_all_user(context["db"] , context["current_user"])
         return all_users
+        
     except Exception as e:
-        db.rollback()
+        # db.rollback()
         raise HTTPException(status_code=500 , detail={e})
-    finally:
-        db.close()
+    
+    # finally:
+    #     db.close()
 
 #---------------------------delete-------------------------
 @app.delete("/users/delete/{userid}" , response_model = MessageResponse , status_code = 200)
@@ -242,9 +264,12 @@ def delete_single_user(
 ):
     db = context["db"]
     try:
-        delete_req = delete_user(context["db"] , userid , context["current_user"])
+        delete_req = delete_user(db , userid , context["current_user"])
         db.commit()
         return delete_req
+
+    except HTTPException:
+        raise
 
     except Exception as e:
         db.rollback()
@@ -260,9 +285,12 @@ def delete_single_url(
 ):
     db = context["db"]
     try:
-        delete_req = delete_url(context["db"] , url_id , context["current_user"])
+        delete_req = delete_url(db , url_id , context["current_user"])
         db.commit()
         return delete_req
+
+    except HTTPException:
+        raise
 
     except Exception as e:
         db.rollback()

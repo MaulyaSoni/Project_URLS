@@ -49,8 +49,6 @@ def authenticate_user(db: Session, email: str, password: str):
     if not verify_hash_password(password,user.hashed_password):
         return False
     
-    print("pass",verify_hash_password(password, user.hashed_password ))
-
     return user
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None):

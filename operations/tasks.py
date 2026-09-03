@@ -5,12 +5,7 @@ from sqlalchemy.dialects.mysql import insert
 from database.schema import URL, ClickLog, URLStats
 from database.db import SessionLocal
 import logging
-logging.basicConfig(
-    filename="Background_tasks.log",
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-)
- 
+
 def record_click_metrics(url_id: int, date_time: str , referer : str):
     
     db : Session = SessionLocal()
