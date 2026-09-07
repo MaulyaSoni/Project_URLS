@@ -55,10 +55,8 @@ def register_user(
 
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500 , detail={e})
+        raise HTTPException(status_code=500 , detail=str(e))
 
-    finally:
-        db.close()
     
 
 @app.post("/admin" , response_model = UsersResponse , status_code = 201)
@@ -83,10 +81,8 @@ def register_admin(
 
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500 , detail={e})
+        raise HTTPException(status_code=500 , detail=str(e))
 
-    finally:
-        db.close()
 
 @app.post("/login")
 def login(
@@ -103,10 +99,7 @@ def login(
 
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500 , detail={e})
-    finally:
-        db.close()
-
+        raise HTTPException(status_code=500 , detail=str(e))
 
 @app.post("/logout" , response_model = MessageResponse)
 def logout(
@@ -124,10 +117,7 @@ def logout(
     
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code = 500 , detail = {e})
-     
-    finally:
-        db.close()
+        raise HTTPException(status_code = 500 , detail = str(e))
 
 #----------------------------------------URL-------------------------------
 @app.post("/url" , response_model = URLResponse , status_code=201)
@@ -152,10 +142,7 @@ def create_new_url(
 
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500 , detail=str(e))
-
-    finally:
-        db.close()       
+        raise HTTPException(status_code=500 , detail=str(e))     
 
 #------------------------------READ---------------------
 
@@ -168,7 +155,7 @@ def fetch_all_url(
         return urls
 
     except Exception as e:
-        raise HTTPException(status_code=500 , detail={e})
+        raise HTTPException(status_code=500 , detail=str(e))
    
 
 #************************************************************
@@ -193,7 +180,7 @@ def fetch_url_from_short_link(
         raise
 
     except Exception as e:
-        raise HTTPException(status_code=500 , detail={e})
+        raise HTTPException(status_code=500 , detail=str(e))
 
 
 @app.get("/my/urls/" , response_model= list[URLResponse])
@@ -208,7 +195,7 @@ def fetch_user_urls(
         raise
 
     except Exception as e:
-        raise HTTPException(status_code=500 , detail={e})
+        raise HTTPException(status_code=500 , detail=str(e))
 
 
 @app.get("/dashboard")
@@ -223,7 +210,7 @@ def fetch_dashboard(
         raise
 
     except Exception as e:
-        raise HTTPException(status_code=500 , detail={e})
+        raise HTTPException(status_code=500 , detail=str(e))
 
 
 #********************************************************
@@ -241,7 +228,7 @@ def get_url_stats_details(
         raise
 
     except Exception as e:
-        raise HTTPException(status_code=500 , detail={e})
+        raise HTTPException(status_code=500 , detail=str(e))
 
 
 #---------------------------Users ---------------
@@ -261,7 +248,7 @@ def get_all_users(
         return all_users
         
     except Exception as e:
-        raise HTTPException(status_code=500 , detail={e})
+        raise HTTPException(status_code=500 , detail=str(e))
     
   
 
@@ -282,10 +269,8 @@ def delete_single_user(
 
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500 , detail={e})
+        raise HTTPException(status_code=500 , detail=str(e))
     
-    finally:
-        db.close()
      
 @app.delete("/url/delete/{url_id}" , response_model = MessageResponse , status_code = 200)
 def delete_single_url(
@@ -303,10 +288,7 @@ def delete_single_url(
 
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500 , detail={e})
-    
-    finally:
-        db.close()
+        raise HTTPException(status_code=500 , detail=str(e))
     
  
 # @app.delete("/delete/all")
