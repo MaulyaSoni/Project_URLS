@@ -65,11 +65,7 @@ def register_admin(
     admin_key = str,
     db: Session = Depends(get_db) 
 ): 
- 
-    try:
-        new_user = create_admin(db , user_data)
- 
-    db = context["db"]
+    db = db
     try:
         new_user = create_admin(db , user_data , admin_key)
         db.flush()
