@@ -40,6 +40,7 @@ def create_url(
 def get_url_link(
     db : Session ,
     request : Request,
+    real_ip : str,
     background_tasks : BackgroundTasks,
     short_link : str):
 
@@ -54,7 +55,7 @@ def get_url_link(
     if referer is None: 
         referer = "null" 
 
-    background_tasks.add_task(record_click_metrics, exist_url.url_id, date_time , referer)
+    background_tasks.add_task(record_click_metrics, exist_url.url_id, date_time , referer , real_ip )
     # print(exist_url.total_clicks)
     # db.commit()
 

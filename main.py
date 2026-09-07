@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from fastapi.exceptions import HTTPException
 from sqlalchemy.exc import IntegrityError
-from fastapi import FastAPI , Request, Depends , BackgroundTasks
+from fastapi import FastAPI , Request, Depends , BackgroundTasks , Header
 from fastapi.security import OAuth2PasswordRequestForm , OAuth2PasswordBearer
 from database.db import get_db , engine , SessionLocal
 from database.schema import Base, Users
@@ -165,12 +165,14 @@ def fetch_url_from_short_link(
     short_link : str , 
     request : Request,
     background_tasks : BackgroundTasks,
+    real_ip: str = Header(None, alias='X-Real-IP'),
     context = Depends(new_user_context)
 ):
     try:
         og_url = get_url_link(
             context["db"],
             request,
+            real_ip,
             background_tasks,
             short_link
             )
