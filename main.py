@@ -8,7 +8,7 @@ from database.schema import Base, Users
 from models.message import MessageResponse
 from models.user import UsersResponse , UsersRequest
 from models.url import URLRequest , URLResponse  , URLStatsResponse
-from routes.user import create_admin , create_user , fetch_all_user , delete_user ,login_with_token
+from routes.user import create_admin , create_user , fetch_all_user , delete_user ,login_with_token ,  logout_route
 from routes.url import get_url_link , get_all_url , get_url_stats 
 from routes.url import create_url , delete_url , get_user_urls , get_dashboard
 from operations.user import get_current_user
@@ -107,6 +107,27 @@ def login(
     finally:
         db.close()
 
+
+@app.post("/logout" , response_model = MessageResponse)
+def logout(
+    token: str = Depends(oauth2_scheme), 
+    context = Depends(current_user_context)
+):
+    db = context["db"]
+    try: 
+        logout = logout_route(db , token)
+        db.commit()
+        return logout
+        
+    except HTTPException:
+        raise
+    
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code = 500 , detail = {e})
+     
+    finally:
+        db.close()
 
 #----------------------------------------URL-------------------------------
 @app.post("/url" , response_model = URLResponse , status_code=201)
@@ -309,3 +330,4 @@ def delete_single_url(
 @app.get("/")
 def read_root():
     return "Welcome to the URL shortener app"    
+

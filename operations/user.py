@@ -5,10 +5,9 @@ from fastapi.security import OAuth2PasswordBearer
 from datetime import datetime , timedelta , timezone
 from sqlalchemy.orm import Session
 from database.db import get_db
-from database.schema import Users
+from database.schema import Users , RevokedToken
 from operations.password import verify_hash_password
 from pwdlib import PasswordHash
-
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
@@ -32,10 +31,16 @@ def get_username_from_token(token:str):
         raise HTTPException(status_code = 401 , detail = "Invalid Token or you have not register with token")
 
 def get_current_user(token: str = Depends(oauth2_scheme),db: Session = Depends(get_db)):
+    
+    is_token_exist = db.query(RevokedToken).filter(RevokedToken.token == token).first()
+    if is_token_exist :
+        raise HTTPException(status_code = 401 , detail = "Token expired or revoked , User need to login ")
+  
     username = get_username_from_token(token)
     user = (db.query(Users).filter(Users.username == username).first())
     if user is None:
         raise HTTPException(status_code=401,detail="User not found")
+    
     return user
 
 def authenticate_user(db: Session, email: str, password: str):

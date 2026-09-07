@@ -1,6 +1,6 @@
 from sqlalchemy import Integer , String , UniqueConstraint , create_engine , Column , ForeignKey , Sequence , Date , DateTime 
 from sqlalchemy.orm import DeclarativeBase , Mapped , mapped_column , relationship
-from datetime import datetime 
+from datetime import datetime , date
 
 class Base(DeclarativeBase):
     pass
@@ -45,3 +45,10 @@ class ClickLog(Base):
     referer : Mapped[str] = mapped_column(String(255),nullable=False)
 
     url_obj = relationship("URL" , back_populates="logs")
+
+class RevokedToken(Base):
+    __tablename__ = "revoked_tokens"
+
+    tokenid : Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    token : Mapped[str] = mapped_column(String(512), unique=True, index=True, nullable=False)
+    created_at : Mapped[date] = mapped_column(DateTime, default=datetime.now())

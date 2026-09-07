@@ -22,6 +22,7 @@ GET /
 POST /admin 
 POST /user
 POST /login 
+POST /logout 
 GET /users/me -> user dependency (should be logged in)
 GET /users/all -> admin dependency
 DELETE /users/delete/{userid} -> admin dependency
