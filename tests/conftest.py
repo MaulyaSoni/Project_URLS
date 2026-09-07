@@ -1,7 +1,4 @@
 import os
-
-os.environ["DATABASE_URL"] = "sqlite:///./test.db"
-
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -10,13 +7,17 @@ from main import app
 from database.schema import Base, Users, URL
 from database.db import get_db
 from dependencies.context import current_user_context
+import operations.tasks as tasks
+from dotenv import load_dotenv
 
-TEST_DATABASE_URL = "sqlite:///./test.db"
+load_dotenv()
+
+DATABASE_URL = os.getenv("DATABASE_URL")
+TEST_DATABASE_URL = os.getenv("TEST_DATABASE_URL")
 
 test_engine = create_engine(
     TEST_DATABASE_URL,
-    connect_args={"check_same_thread": False},
-)
+   )
 
 TestingSessionLocal = sessionmaker(
     bind=test_engine,
@@ -24,27 +25,20 @@ TestingSessionLocal = sessionmaker(
     autoflush=True,
 )
 
-@pytest.fixture(scope="session", autouse=True)
-def setup_database():
-    Base.metadata.create_all(bind=test_engine)
-    yield
-    Base.metadata.drop_all(bind=test_engine)
-
 @pytest.fixture
-def db():
+def db(monkeypatch):
+    Base.metadata.create_all(bind=test_engine)
+
     session = TestingSessionLocal()
+
+    monkeypatch.setattr(tasks, "SessionLocal", TestingSessionLocal)
 
     try:
         yield session
     finally:
         session.rollback()
-
-        # Clean tables after every test
-        for table in reversed(Base.metadata.sorted_tables):
-            session.execute(table.delete())
-
-        session.commit()
         session.close()
+        Base.metadata.drop_all(bind=test_engine)
 
 @pytest.fixture
 def client(db):
@@ -95,7 +89,7 @@ def authenticated_client(db, test_user):
 @pytest.fixture
 def created_url(db, test_user):
     url = URL(
-        url="https://example.com",
+        url="https://example.com/page",
         short_link="TEST1",
         owner_id=test_user.userid,
         total_clicks=0,
@@ -106,3 +100,5 @@ def created_url(db, test_user):
     db.refresh(url)
 
     return url
+
+    
