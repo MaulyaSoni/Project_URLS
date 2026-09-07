@@ -57,7 +57,7 @@ def create_user(
         clean_email = str(valid_email.email).strip().lower()
 
     except EmailNotValidError as e:
-        raise HTTPException(status_code = 400 , detail=f"!! Invalid email !!, {e}")
+        raise HTTPException(status_code = 400 , detail=f"!! Invalid email !!, str(e)")
 
     existing_user = (db.query(Users).filter(Users.email == clean_email).first())
   
@@ -86,7 +86,7 @@ def create_admin(
         valid_email = validate_email(user_data.email, check_deliverability=True)
   
     except EmailNotValidError as e:
-        raise HTTPException(status_code = 400 , detail=f"!! Invalid email !!, {e}")
+        raise HTTPException(status_code = 400 , detail=f"!! Invalid email !!, str(e)")
 
     if admin_key != ADMIN_KEY:
         raise HTTPException(status_code = 403 , detail="You don't have valid ADMIN KEY to create admin")
