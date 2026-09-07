@@ -8,7 +8,7 @@ from database.schema import Base, Users
 from models.message import MessageResponse
 from models.user import UsersResponse , UsersRequest
 from models.url import URLRequest , URLResponse  , URLStatsResponse
-from routes.user import create_admin , create_user , fetch_all_user , delete_user ,login_with_token
+from routes.user import create_admin , create_user , fetch_all_user , delete_user ,login_with_token ,  logout_route
 from routes.url import get_url_link , get_all_url , get_url_stats 
 from routes.url import create_url , delete_url , get_user_urls , get_dashboard
 from operations.user import get_current_user
@@ -67,6 +67,10 @@ def register_admin(
     admin_key = str,
     db: Session = Depends(get_db) 
 ): 
+ 
+    try:
+        new_user = create_admin(db , user_data)
+ 
     db = context["db"]
     try:
         new_user = create_admin(db , user_data , admin_key)
@@ -93,7 +97,9 @@ def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db) 
 ):
+ 
     db = context["db"]
+ 
     try:
         login_token = login_with_token(db, form_data)
         return login_token
@@ -107,6 +113,27 @@ def login(
     finally:
         db.close()
 
+
+@app.post("/logout" , response_model = MessageResponse)
+def logout(
+    token: str = Depends(oauth2_scheme), 
+    context = Depends(current_user_context)
+):
+    db = context["db"]
+    try: 
+        logout = logout_route(db , token)
+        db.commit()
+        return logout
+
+    except HTTPException:
+        raise
+    
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code = 500 , detail = {e})
+     
+    finally:
+        db.close()
 
 #----------------------------------------URL-------------------------------
 @app.post("/url" , response_model = URLResponse , status_code=201)
@@ -147,11 +174,19 @@ def fetch_all_url(
         return urls
 
     except Exception as e:
+ 
+        db.rollback()
+        raise HTTPException(status_code=500 , detail={e})
+
+    finally:
+        db.close()     
+ 
         # db.rollback()
         raise HTTPException(status_code=500 , detail={e})
 
     # finally:
     #     db.close()     
+ 
 
 #************************************************************
 
@@ -162,9 +197,19 @@ def fetch_url_from_short_link(
     background_tasks : BackgroundTasks,
     context = Depends(new_user_context)
 ):
-    db = context["db"]
     try:
         og_url = get_url_link(context["db"] , request , background_tasks , short_link )
+ 
+        db.commit()
+        return og_url
+
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500 , detail={e})
+
+    finally:
+        db.close()
+ 
         # db.commit()
         return og_url
 
@@ -172,7 +217,6 @@ def fetch_url_from_short_link(
         raise
 
     except Exception as e:
-        # db.rollback()
         raise HTTPException(status_code=500 , detail={e})
 
 
@@ -188,7 +232,6 @@ def fetch_user_urls(
         raise
 
     except Exception as e:
-        # db.rollback()
         raise HTTPException(status_code=500 , detail={e})
 
     # finally:
@@ -206,11 +249,11 @@ def fetch_dashboard(
         raise
 
     except Exception as e:
-        # db.rollback()
         raise HTTPException(status_code=500 , detail={e})
 
     # finally:
     #     db.close()
+
 
 #********************************************************
 
@@ -227,11 +270,11 @@ def get_url_stats_details(
         raise
 
     except Exception as e:
-        # db.rollback()
         raise HTTPException(status_code=500 , detail={e})
 
     # finally:
     #     db.close()
+
 
 #---------------------------Users ---------------
 
@@ -250,11 +293,11 @@ def get_all_users(
         return all_users
         
     except Exception as e:
-        # db.rollback()
         raise HTTPException(status_code=500 , detail={e})
     
     # finally:
     #     db.close()
+
 
 #---------------------------delete-------------------------
 @app.delete("/users/delete/{userid}" , response_model = MessageResponse , status_code = 200)
@@ -309,3 +352,4 @@ def delete_single_url(
 @app.get("/")
 def read_root():
     return "Welcome to the URL shortener app"    
+

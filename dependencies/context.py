@@ -20,7 +20,7 @@ def current_user_context(
     db : Session = Depends(get_db),
     current_user : Users = Depends(get_current_user)  
     ):
-
+    
     return {'db' : db , 'current_user' : current_user}
 
 def new_user_context(

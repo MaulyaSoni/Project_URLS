@@ -2,16 +2,18 @@ import os
 import logging
 from dotenv import load_dotenv
 from sqlalchemy.orm import Session
-from fastapi import HTTPException
+from fastapi import HTTPException , Depends
 from fastapi.security import OAuth2PasswordRequestForm
-from database.schema import Users
+from database.schema import Users , RevokedToken
 from models.user import UsersRequest 
 from operations.user import authenticate_user , create_access_token
 from operations.password import generate_hash_password
 from email_validator import validate_email , EmailNotValidError
+from fastapi.security import OAuth2PasswordBearer
 
 load_dotenv()
 ADMIN_KEY = os.getenv("ADMIN_KEY")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 #----------------------------------------------------
 
@@ -27,6 +29,22 @@ def login_with_token(
     logging.info(f"Access token created for user : '{form_data.username}'")
     
     return {"access_token": token,"token_type": "bearer"}
+
+def logout_route(db : Session , token: str = Depends(oauth2_scheme)):
+   
+    #for safety
+    
+    # existing_token = db.query(RevokedToken).filter(RevokedToken.token == token).first()
+    # if existing_token:
+    #     raise HTTPException(
+    #         status_code=400,
+    #         detail="Token already revoked or logged out"
+    #     )
+    
+    db_token = RevokedToken(token=token)
+    db.add(db_token)
+    # db.commit()
+    return{"message" : "User Logout Success"}
 
 #----------------------------------------------------------
 

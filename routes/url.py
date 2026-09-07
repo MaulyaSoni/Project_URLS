@@ -54,9 +54,9 @@ def get_url_link(
     if referer is None: 
         referer = "null" 
 
-    background_tasks.add_task(record_click_metrics, db, exist_url.url_id, date_time , referer)
+    background_tasks.add_task(record_click_metrics, exist_url.url_id, date_time , referer)
     # print(exist_url.total_clicks)
-    db.commit()
+    # db.commit()
 
     return RedirectResponse(url = exist_url.url , status_code = 303)
 

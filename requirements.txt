@@ -11,3 +11,4 @@ python-multipart
 uv
 pydantic[email]
 pymysql
+httpx2
