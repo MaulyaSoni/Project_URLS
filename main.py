@@ -118,7 +118,7 @@ def logout(
         logout = logout_route(db , token)
         db.commit()
         return logout
-        
+
     except HTTPException:
         raise
     
@@ -168,11 +168,8 @@ def fetch_all_url(
         return urls
 
     except Exception as e:
-        # db.rollback()
         raise HTTPException(status_code=500 , detail={e})
-
-    # finally:
-    #     db.close()     
+   
 
 #************************************************************
 
@@ -183,17 +180,19 @@ def fetch_url_from_short_link(
     background_tasks : BackgroundTasks,
     context = Depends(new_user_context)
 ):
-    db = context["db"]
     try:
-        og_url = get_url_link(context["db"] , request , background_tasks , short_link )
-        # db.commit()
+        og_url = get_url_link(
+            context["db"],
+            request,
+            background_tasks,
+            short_link
+            )
         return og_url
 
     except HTTPException:
         raise
 
     except Exception as e:
-        # db.rollback()
         raise HTTPException(status_code=500 , detail={e})
 
 
@@ -209,11 +208,8 @@ def fetch_user_urls(
         raise
 
     except Exception as e:
-        # db.rollback()
         raise HTTPException(status_code=500 , detail={e})
 
-    # finally:
-    #     db.close()
 
 @app.get("/dashboard")
 def fetch_dashboard(
@@ -227,11 +223,8 @@ def fetch_dashboard(
         raise
 
     except Exception as e:
-        # db.rollback()
         raise HTTPException(status_code=500 , detail={e})
 
-    # finally:
-    #     db.close()
 
 #********************************************************
 
@@ -248,11 +241,8 @@ def get_url_stats_details(
         raise
 
     except Exception as e:
-        # db.rollback()
         raise HTTPException(status_code=500 , detail={e})
 
-    # finally:
-    #     db.close()
 
 #---------------------------Users ---------------
 
@@ -271,11 +261,9 @@ def get_all_users(
         return all_users
         
     except Exception as e:
-        # db.rollback()
         raise HTTPException(status_code=500 , detail={e})
     
-    # finally:
-    #     db.close()
+  
 
 #---------------------------delete-------------------------
 @app.delete("/users/delete/{userid}" , response_model = MessageResponse , status_code = 200)

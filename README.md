@@ -18,7 +18,7 @@ Now we have total 14 endpoints
 1- General  
 GET / 
 
-6 related to the user & its operations 
+7 related to the user & its operations 
 POST /admin 
 POST /user
 POST /login 
@@ -35,3 +35,15 @@ GET /my/urls ->user dependency
 GET /dashboard  ->admin dependency
 GET /url/stats/{url_id} ->current user and admin dependency
 DELETE /url/delete/{url_id} ->admin dependency
+
+Why we do the DB-Session operations in main file whenever we need to modify and update the db 
+The main reasons are:-
+
+1) To tackle the 1205 error (transaction lock and wait error) , which generally comes when an db request is pending and a new request comes and want to execute that request . 
+
+This error and issue comes when updating the task in the get_url_link route , when need to update the stats and need to create a log , this all thing goes into the backgroundtasks and at that time the 1205 comes and i figure out this approach.
+
+2) Another reason is precaution for the db session opening but not closing , so using the exception handling we are rollback the db and also closing the db as our work completed , this prevents the error regarding to retrival the data from the database using the ORM Session .
+
+3) And this error specifically comes under the upsert operation , when using the on_conflict_do_update operation for changing the data in the URL Stats table , the background tasks takes a long waiting time and the thread goes to sleep and rest operation thread comes in a queue , so in background tasks , not passing the current db session of the route and providing a new session to them , solves this issue and with the exception handling , things works completely.
+

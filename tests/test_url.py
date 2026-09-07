@@ -2,7 +2,7 @@ from datetime import datetime
 from fastapi import Request
 from database.schema import URL
 from operations.tasks import record_click_metrics
-from tests.confest import authenticated_client
+from tests.conftest import authenticated_client
 from sqlalchemy.orm import Session 
 from database.db import get_db , SessionLocal
 

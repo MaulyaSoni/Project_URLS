@@ -1,38 +1,15 @@
-# import pytest
-
-
-# @pytest.fixture
-# def sample_user():
-#     return {"id": 1, "name": "Ada Lovelace", "role": "admin"}
-
-
-# def test_user_is_admin(sample_user):
-#     assert sample_user["role"] == "admin"
-
-
-# def test_user_has_name(sample_user):
-#     assert sample_user["name"] == "Ada Lovelace"
-
 import os
 
-# IMPORTANT:
-# Set test DB before importing application/database modules.
 os.environ["DATABASE_URL"] = "sqlite:///./test.db"
 
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-
 from main import app
 from database.schema import Base, Users, URL
 from database.db import get_db
 from dependencies.context import current_user_context
-
-
-# --------------------------------------------------
-# TEST DATABASE
-# --------------------------------------------------
 
 TEST_DATABASE_URL = "sqlite:///./test.db"
 
@@ -47,23 +24,11 @@ TestingSessionLocal = sessionmaker(
     autoflush=True,
 )
 
-
-# --------------------------------------------------
-# CREATE TEST TABLES
-# --------------------------------------------------
-
 @pytest.fixture(scope="session", autouse=True)
 def setup_database():
     Base.metadata.create_all(bind=test_engine)
-
     yield
-
     Base.metadata.drop_all(bind=test_engine)
-
-
-# --------------------------------------------------
-# DATABASE SESSION
-# --------------------------------------------------
 
 @pytest.fixture
 def db():
@@ -81,11 +46,6 @@ def db():
         session.commit()
         session.close()
 
-
-# --------------------------------------------------
-# OVERRIDE FASTAPI DB
-# --------------------------------------------------
-
 @pytest.fixture
 def client(db):
     def override_get_db():
@@ -97,11 +57,6 @@ def client(db):
         yield test_client
 
     app.dependency_overrides.clear()
-
-
-# --------------------------------------------------
-# TEST USER
-# --------------------------------------------------
 
 @pytest.fixture
 def test_user(db):
@@ -117,11 +72,6 @@ def test_user(db):
     db.refresh(user)
 
     return user
-
-
-# --------------------------------------------------
-# CURRENT USER CONTEXT
-# --------------------------------------------------
 
 @pytest.fixture
 def authenticated_client(db, test_user):
@@ -141,10 +91,6 @@ def authenticated_client(db, test_user):
 
     app.dependency_overrides.clear()
 
-
-# --------------------------------------------------
-# CREATE URL DIRECTLY
-# --------------------------------------------------
 
 @pytest.fixture
 def created_url(db, test_user):
