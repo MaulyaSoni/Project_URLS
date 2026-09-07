@@ -1,8 +1,8 @@
 from datetime import datetime
 from fastapi import Request
-from database.schema import URL
+from database.schema import URL , ClickLog , URLStats
 from operations.tasks import record_click_metrics
-from tests.conftest import authenticated_client
+from tests.conftest import authenticated_client , created_url
 from sqlalchemy.orm import Session 
 from database.db import get_db , SessionLocal
 
@@ -18,19 +18,40 @@ def test_short_link_unique(authenticated_client):
 
     assert short_link_1 != short_link_2
 
-def test_short_url_redirected(client : Request , short_link : str):
-    response = client.get(f"/url/{short_link}" , follow_redirections=False)
+def test_short_url_redirected(client , created_url):
+    response = client.get(
+        f"/url/{created_url.short_link}" ,
+        follow_redirects=False
+    )
     assert response.status_code == 303
-    assert response.headers["location"] == short_link
+    assert response.headers["location"] == created_url.url
 
-db : Session = SessionLocal()
 
-def test_short_url_stats(db : Session , short_link : str):
-    record_click_metrics(short_link.url_id , datetime.now() , "pytest")
-    record_click_metrics(short_link.url_id , datetime.now() , "pytest")
-    db.refresh(short_link)
+def test_short_url_stats(db, created_url):
+    record_click_metrics(created_url.url_id , datetime.now() , "pytest")
+    record_click_metrics(created_url.url_id , datetime.now() , "pytest")
+    
+    db.refresh(created_url)
 
-    assert short_link.total_clicks == 2  
-    assert short_link.logs is not None
-    assert len(short_link) == 2
+    url = db.get(URL , created_url.url_id)
+    print(url.url_id , url.total_clicks)    
+    assert url is not None
+    assert url.total_clicks == 2
+
+    logs = (
+        db.query(ClickLog)
+        .filter(ClickLog.url_id == created_url.url_id)
+        .all()
+    )
+    print(ClickLog.url_id)
+    assert len(logs) == 2
+
+    stats = (
+        db.query(URLStats)
+        .filter(URLStats.url_id == created_url.url_id)
+        .all()
+    )
+
+    assert len(stats) == 1
+    assert stats[0].clicks_per_day == 2
 
