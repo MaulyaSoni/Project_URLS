@@ -45,8 +45,7 @@ def record_click_metrics(url_id: int, date_time: str , referer : str , client_ip
     except Exception:
         db.rollback()
         logging.exception("Click track handle the exception")
-        # raise HTTPException(status_code = 500 , detail = f"Click track failed :-str(e)")
-
+        
     finally:
         db.close()  
         logging.info(f"Background tasks run successfully {url_id}")

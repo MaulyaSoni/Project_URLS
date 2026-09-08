@@ -286,13 +286,6 @@ def delete_single_url(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500 , detail="Internal Server Error")
-    
- 
-# @app.delete("/delete/all")
-# def del_all(
-#     context = Depends(admin_context)
-# ):
-#     return delete_all(context["db"],context["current_user"])
 
 @app.get("/")
 def read_root():

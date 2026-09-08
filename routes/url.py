@@ -55,11 +55,7 @@ def get_url_link(
     if referer is None: 
         referer = "null" 
 
-    print(client_ip)
-
     background_tasks.add_task(record_click_metrics, exist_url.url_id, date_time , referer , client_ip )
-    # print(exist_url.total_clicks)
-    # db.commit()
 
     return RedirectResponse(url = exist_url.url , status_code = 303)
 
@@ -92,9 +88,6 @@ def get_dashboard(
 
     analytics = (db.query(URLStats).order_by(desc(URLStats.date),desc(URLStats.stats_id)).all())
 
-    # data.append(logs)
-    # data.append(analytics)
-    # return data
     return{
         "urls":urls , "click_logs" : logs , "analytics":analytics
     }
@@ -125,12 +118,6 @@ def get_url_stats(
 
     analytics = (db.query(URLStats).filter(URLStats.url_id == url_id).order_by(desc(URLStats.date) , desc(URLStats.stats_id)).all())
 
-    # res = []
-    # res.append(url_res)
-    # res.append(logs)
-    # res.append(analytics)
-    # return res
-    
     return{
         "url":url_res , "logs":logs , "stats":analytics
     }
@@ -166,7 +153,6 @@ def delete_url(
         db.rollback()
         raise HTTPException(status_code = 409 , detail=str(e))
 
-
     except Exception as e:
         db.rollback()
         raise 
@@ -174,11 +160,3 @@ def delete_url(
     logging.info(f"ID {url_id} , url deleted by : '{current_user.username}'")
     return {"message" : f"ID - {url_id} Deleted successfully"}
 
-
-# def delete_all(
-#     db : Session,
-#     current_user : Users
-# ):
-#     c1 = db.query(URL).all()
-#     db.delete(c1)
-#     db.commit()

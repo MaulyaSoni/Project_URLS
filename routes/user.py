@@ -31,15 +31,13 @@ def login_with_token(
     return {"access_token": token,"token_type": "bearer"}
 
 def logout_route(db : Session , token: str = Depends(oauth2_scheme)):
-   
-    #for safety
-    
-    # existing_token = db.query(RevokedToken).filter(RevokedToken.token == token).first()
-    # if existing_token:
-    #     raise HTTPException(
-    #         status_code=400,
-    #         detail="Token already revoked or logged out"
-    #     )
+ 
+    existing_token = db.query(RevokedToken).filter(RevokedToken.token == token).first()
+    if existing_token:
+        raise HTTPException(
+            status_code=400,
+            detail="Token already revoked or logged out"
+        )
     
     db_token = RevokedToken(token=token)
     db.add(db_token)
@@ -57,7 +55,10 @@ def create_user(
         clean_email = str(valid_email.email).strip().lower()
 
     except EmailNotValidError as e:
-        raise HTTPException(status_code = 400 , detail=f"!! Invalid email !!, str(e)")
+        raise HTTPException(
+            status_code = 400 ,
+            detail=f"!! Invalid email !!"
+        )
 
     existing_user = (db.query(Users).filter(Users.email == clean_email).first())
   
@@ -86,15 +87,24 @@ def create_admin(
         valid_email = validate_email(user_data.email, check_deliverability=True)
   
     except EmailNotValidError as e:
-        raise HTTPException(status_code = 400 , detail=f"!! Invalid email !!, str(e)")
+        raise HTTPException(
+            status_code = 400 ,
+            detail=f"!! Invalid email !!"
+        )
 
     if admin_key != ADMIN_KEY:
-        raise HTTPException(status_code = 403 , detail="You don't have valid ADMIN KEY to create admin")
+        raise HTTPException(
+            status_code = 403 ,
+            detail="You don't have valid ADMIN KEY to create admin"
+        )
     
     existing_user = (db.query(Users).filter(Users.email == user_data.email).first())
     
     if existing_user and existing_user.user_role == 'Admin':
-        raise HTTPException(status_code = 409 , detail = "Admin already exists")
+        raise HTTPException(
+            status_code = 409 ,
+            detail = "Admin already exists"
+        )
 
     new_user = Users(
         username=user_data.username,
@@ -123,9 +133,9 @@ def delete_user(
     userid : int,
     current_user : Users):
     
-    user = db.get(Users , userid)
    
     try :
+        user = db.get(Users , userid)
 
         if userid is None :
             raise HTTPException(status_code = 404 , detail = "Invalid UserID")
@@ -133,7 +143,7 @@ def delete_user(
         if user is None:
             raise HTTPException(status_code = 404 , detail = "UserID not found ")
      
-    except (AttributeError , Exception , ValueError) as e:
+    except (Exception , ValueError) as e:
         raise e
     
     db.delete(user)

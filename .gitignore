@@ -5,3 +5,5 @@ __pycache__/
 .venv/
 .log
 alembic.ini
+.pytest_cache/
+*.ini
