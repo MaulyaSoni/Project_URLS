@@ -140,7 +140,7 @@ def create_new_url(
 
 #------------------------------READ---------------------
 
-@app.get("/url" , response_model = list[URLStatsResponse])
+@app.get("/urls" , response_model = list[URLStatsResponse])
 def fetch_all_url(
     context = Depends(admin_context)
 ):
