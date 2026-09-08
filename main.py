@@ -187,7 +187,7 @@ def fetch_url_from_short_link(
         raise HTTPException(status_code=500 , detail=f"Internal Server Error {e}")
 
 
-@app.get("/my/urls/" , response_model= list[URLResponse])
+@app.get("/my/urls/" , response_model= list[URLStatsResponse])
 def fetch_user_urls(
     context = Depends(current_user_context)
 ):
