@@ -45,3 +45,5 @@ class URLDetailsResponse(BaseModel):
     url : URLStatsResponse
     logs : list[ClickLogResponse]
     stats : list[AnalyticsResponse]
+
+    model_config = ConfigDict(from_attributes=True)
