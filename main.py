@@ -159,16 +159,17 @@ def fetch_url_from_short_link(
     short_link : str , 
     request : Request,
     background_tasks : BackgroundTasks,
-    real_ip: str = Header(None, alias='X-Real-IP'),
     context = Depends(new_user_context)
 ):
     try:
+
+        client_ip = request.client.host if request.client else "Unknown"
         og_url = get_url_link(
             context["db"],
             request,
-            real_ip,
             background_tasks,
-            short_link
+            short_link,
+            client_ip,
             )
         return og_url
 
@@ -176,7 +177,7 @@ def fetch_url_from_short_link(
         raise
 
     except Exception as e:
-        raise HTTPException(status_code=500 , detail="Internal Server Error")
+        raise HTTPException(status_code=500 , detail=f"Internal Server Error {e}")
 
 
 @app.get("/my/urls/" , response_model= list[URLResponse])

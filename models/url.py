@@ -30,7 +30,7 @@ class ClickLogResponse(BaseModel):
     url_id : int
     clicked_at : datetime
     referer : str
-    # ip : str | None
+    ip : str | None
 
     model_config = ConfigDict(from_attributes=True)
 

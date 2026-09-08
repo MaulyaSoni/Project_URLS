@@ -6,14 +6,14 @@ from database.schema import URL, ClickLog, URLStats
 from database.db import SessionLocal
 import logging
 
-def record_click_metrics(url_id: int, date_time: str , referer : str , real_ip : str):
+def record_click_metrics(url_id: int, date_time: str , referer : str , client_ip : str):
     
     db : Session = SessionLocal()
     # Log table updation
     try:
-        new_log = ClickLog(url_id=url_id, clicked_at=date_time , referer = referer , ip = real_ip)
+        new_log = ClickLog(url_id=url_id, clicked_at=date_time , referer = referer , ip = client_ip)
         db.add(new_log)
-
+        
         logging.info(f"Click_log created {date_time}")
 
     # Click counter 
@@ -29,6 +29,7 @@ def record_click_metrics(url_id: int, date_time: str , referer : str , real_ip :
             url_id=url_id,
             date=today,
             clicks_per_day=1
+            
         )
 
         # If the combination of url_id and date exists, add 1 to clicks_per_day
