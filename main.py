@@ -7,7 +7,7 @@ from database.db import get_db , engine , SessionLocal
 from database.schema import Base, Users
 from models.message import MessageResponse
 from models.user import UsersResponse , UsersRequest
-from models.url import URLRequest , URLResponse  , URLStatsResponse
+from models.url import URLRequest , URLResponse  , URLStatsResponse , DashboardResponse , URLDetailsResponse
 from routes.user import create_admin , create_user , fetch_all_user , delete_user ,login_with_token ,  logout_route
 from routes.url import get_url_link , get_all_url , get_url_stats 
 from routes.url import create_url , delete_url , get_user_urls , get_dashboard
@@ -192,7 +192,7 @@ def fetch_user_urls(
         raise HTTPException(status_code=500 , detail="Internal Server Error")
 
 
-@app.get("/dashboard")
+@app.get("/dashboard",response_model = DashboardResponse)
 def fetch_dashboard(
     context = Depends(admin_context)
 ):
@@ -209,7 +209,7 @@ def fetch_dashboard(
 
 #********************************************************
 
-@app.get("/url/stats/{url_id}")
+@app.get("/url/stats/{url_id}" , response_model = URLDetailsResponse)
 def get_url_stats_details(
     url_id : int,
     context = Depends(current_user_context)
