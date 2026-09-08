@@ -217,7 +217,7 @@ def fetch_dashboard(
 
 @app.get("/url/stats/{url_id}")
 def get_url_stats_details(
-    url_id : str,
+    url_id : int,
     context = Depends(current_user_context)
 ):
     try:
@@ -255,7 +255,7 @@ def get_all_users(
 #---------------------------delete-------------------------
 @app.delete("/users/delete/{userid}" , response_model = MessageResponse , status_code = 200)
 def delete_single_user(
-    userid : str,
+    userid : int,
     context = Depends(admin_context)
 ):
     db = context["db"]
@@ -274,7 +274,7 @@ def delete_single_user(
      
 @app.delete("/url/delete/{url_id}" , response_model = MessageResponse , status_code = 200)
 def delete_single_url(
-    url_id : str,
+    url_id : int,
     context = Depends(current_user_context)
 ):
     db = context["db"]

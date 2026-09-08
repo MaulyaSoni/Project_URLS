@@ -101,7 +101,7 @@ def get_all_url(
 
 def get_url_stats(
     db : Session,
-    url_id : str,
+    url_id : int,
     current_user: Users):
 
     url_res = db.get(URL , url_id)
@@ -129,7 +129,7 @@ def get_url_stats(
 
 def delete_url(
     db : Session,
-    url_id : str,
+    url_id : int,
     current_user : str
 ):
     url = db.get(URL , url_id)
