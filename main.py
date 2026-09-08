@@ -54,6 +54,7 @@ def register_user(
 
     except Exception as e:
         db.rollback()
+        logging.error(f"{e}")
         raise HTTPException(status_code=500 , detail="Internal Server Error")
 
     
@@ -77,6 +78,7 @@ def register_admin(
 
     except Exception as e:
         db.rollback()
+        logging.error(f"{e}")
         raise HTTPException(status_code=500 , detail="Internal Server Error")
 
 
@@ -94,6 +96,7 @@ def login(
 
     except Exception as e:
         db.rollback()
+        logging.error(f"{e}")
         raise HTTPException(status_code=500 , detail="Internal Server Error")
 
 @app.post("/logout" , response_model = MessageResponse)
@@ -112,6 +115,7 @@ def logout(
     
     except Exception as e:
         db.rollback()
+        logging.error(f"{e}")
         raise HTTPException(status_code = 500 , detail="Internal Server Error")
 
 #----------------------------------------URL-------------------------------
@@ -136,6 +140,7 @@ def create_new_url(
 
     except Exception as e:
         db.rollback()
+        logging.error(f"{e}")
         raise HTTPException(status_code=500 ,detail="Internal Server Error")     
 
 #------------------------------READ---------------------
@@ -149,6 +154,7 @@ def fetch_all_url(
         return urls
 
     except Exception as e:
+        logging.error(f"{e}")
         raise HTTPException(status_code=500 ,detail="Internal Server Error")
    
 
@@ -177,6 +183,7 @@ def fetch_url_from_short_link(
         raise
 
     except Exception as e:
+        logging.error(f"{e}")
         raise HTTPException(status_code=500 , detail=f"Internal Server Error {e}")
 
 
@@ -192,6 +199,7 @@ def fetch_user_urls(
         raise
 
     except Exception as e:
+        logging.error(f"{e}")
         raise HTTPException(status_code=500 , detail="Internal Server Error")
 
 
@@ -207,6 +215,7 @@ def fetch_dashboard(
         raise
 
     except Exception as e:
+        logging.error(f"{e}")
         raise HTTPException(status_code=500 , detail="Internal Server Error")
 
 
@@ -225,6 +234,7 @@ def get_url_stats_details(
         raise
 
     except Exception as e:
+        logging.error(f"{e}")
         raise HTTPException(status_code=500 , detail="Internal Server Error")
 
 
@@ -245,6 +255,7 @@ def get_all_users(
         return all_users
         
     except Exception as e:
+        logging.error(f"{e}")
         raise HTTPException(status_code=500 , detail="Internal Server Error")
     
   
@@ -266,6 +277,7 @@ def delete_single_user(
 
     except Exception as e:
         db.rollback()
+        logging.error(f"{e}")
         raise HTTPException(status_code=500 , detail="Internal Server Error")
     
      
@@ -285,6 +297,7 @@ def delete_single_url(
 
     except Exception as e:
         db.rollback()
+        logging.error(f"{e}")
         raise HTTPException(status_code=500 , detail="Internal Server Error")
 
 @app.get("/")
