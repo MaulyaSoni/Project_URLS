@@ -7,7 +7,7 @@ from database.db import get_db , engine , SessionLocal
 from database.schema import Base, Users
 from models.message import MessageResponse
 from models.user import UsersResponse , UsersRequest
-from models.url import URLRequest , URLResponse  , URLStatsResponse
+from models.url import URLRequest , URLResponse  , URLStatsResponse , DashboardResponse , URLDetailsResponse
 from routes.user import create_admin , create_user , fetch_all_user , delete_user ,login_with_token ,  logout_route
 from routes.url import get_url_link , get_all_url , get_url_stats 
 from routes.url import create_url , delete_url , get_user_urls , get_dashboard
@@ -39,10 +39,9 @@ def register_user(
     user_data: UsersRequest,
     db: Session = Depends(get_db)
 ):
-    db = context["db"]
     try:
         new_user = create_user(db , user_data)
-        db.flush()
+      
         db.commit()
         return {
             "userid":new_user.userid,
@@ -55,24 +54,17 @@ def register_user(
 
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500 , detail=str(e))
+        raise HTTPException(status_code=500 , detail="Internal Server Error")
 
     
-
 @app.post("/admin" , response_model = UsersResponse , status_code = 201)
 def register_admin(
     user_data: UsersRequest,
     admin_key = str,
     db: Session = Depends(get_db) 
 ): 
- 
-    try:
-        new_user = create_admin(db , user_data)
- 
-    db = context["db"]
     try:
         new_user = create_admin(db , user_data , admin_key)
-        db.flush()
         db.commit()
         return {
             "userid":new_user.userid,
@@ -85,7 +77,7 @@ def register_admin(
 
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500 , detail=str(e))
+        raise HTTPException(status_code=500 , detail="Internal Server Error")
 
 
 @app.post("/login")
@@ -93,9 +85,6 @@ def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db) 
 ):
- 
-    db = context["db"]
- 
     try:
         login_token = login_with_token(db, form_data)
         return login_token
@@ -105,7 +94,7 @@ def login(
 
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500 , detail=str(e))
+        raise HTTPException(status_code=500 , detail="Internal Server Error")
 
 @app.post("/logout" , response_model = MessageResponse)
 def logout(
@@ -123,7 +112,7 @@ def logout(
     
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code = 500 , detail = str(e))
+        raise HTTPException(status_code = 500 , detail="Internal Server Error")
 
 #----------------------------------------URL-------------------------------
 @app.post("/url" , response_model = URLResponse , status_code=201)
@@ -134,7 +123,6 @@ def create_new_url(
     db = context["db"]
     try:
         new_url =  create_url(db, req ,context["current_user"])
-        db.flush()
         db.commit()
 
         return{
@@ -148,7 +136,7 @@ def create_new_url(
 
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500 , detail=str(e))     
+        raise HTTPException(status_code=500 ,detail="Internal Server Error")     
 
 #------------------------------READ---------------------
 
@@ -161,7 +149,7 @@ def fetch_all_url(
         return urls
 
     except Exception as e:
-        raise HTTPException(status_code=500 , detail=str(e))
+        raise HTTPException(status_code=500 ,detail="Internal Server Error")
    
 
 #************************************************************
@@ -193,7 +181,7 @@ def fetch_url_from_short_link(
         raise
 
     except Exception as e:
-        raise HTTPException(status_code=500 , detail=str(e))
+        raise HTTPException(status_code=500 , detail="Internal Server Error")
 
 
 @app.get("/my/urls/" , response_model= list[URLResponse])
@@ -208,12 +196,12 @@ def fetch_user_urls(
         raise
 
     except Exception as e:
-        raise HTTPException(status_code=500 , detail=str(e))
+        raise HTTPException(status_code=500 , detail="Internal Server Error")
 
     # finally:
     #     db.close()
 
-@app.get("/dashboard")
+@app.get("/dashboard",response_model = DashboardResponse)
 def fetch_dashboard(
     context = Depends(admin_context)
 ):
@@ -225,7 +213,7 @@ def fetch_dashboard(
         raise
 
     except Exception as e:
-        raise HTTPException(status_code=500 , detail=str(e))
+        raise HTTPException(status_code=500 , detail="Internal Server Error")
 
     # finally:
     #     db.close()
@@ -233,9 +221,9 @@ def fetch_dashboard(
 
 #********************************************************
 
-@app.get("/url/stats/{url_id}")
+@app.get("/url/stats/{url_id}" , response_model = URLDetailsResponse)
 def get_url_stats_details(
-    url_id : str,
+    url_id : int,
     context = Depends(current_user_context)
 ):
     try:
@@ -246,7 +234,7 @@ def get_url_stats_details(
         raise
 
     except Exception as e:
-        raise HTTPException(status_code=500 , detail=str(e))
+        raise HTTPException(status_code=500 , detail="Internal Server Error")
 
     # finally:
     #     db.close()
@@ -269,7 +257,7 @@ def get_all_users(
         return all_users
         
     except Exception as e:
-        raise HTTPException(status_code=500 , detail=str(e))
+        raise HTTPException(status_code=500 , detail="Internal Server Error")
     
     # finally:
     #     db.close()
@@ -278,7 +266,7 @@ def get_all_users(
 #---------------------------delete-------------------------
 @app.delete("/users/delete/{userid}" , response_model = MessageResponse , status_code = 200)
 def delete_single_user(
-    userid : str,
+    userid : int,
     context = Depends(admin_context)
 ):
     db = context["db"]
@@ -292,12 +280,12 @@ def delete_single_user(
 
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500 , detail=str(e))
+        raise HTTPException(status_code=500 , detail="Internal Server Error")
     
      
 @app.delete("/url/delete/{url_id}" , response_model = MessageResponse , status_code = 200)
 def delete_single_url(
-    url_id : str,
+    url_id : int,
     context = Depends(current_user_context)
 ):
     db = context["db"]
@@ -311,7 +299,7 @@ def delete_single_url(
 
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500 , detail=str(e))
+        raise HTTPException(status_code=500 , detail="Internal Server Error")
     
  
 # @app.delete("/delete/all")
