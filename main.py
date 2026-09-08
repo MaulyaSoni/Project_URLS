@@ -39,10 +39,9 @@ def register_user(
     user_data: UsersRequest,
     db: Session = Depends(get_db)
 ):
-    db = db
     try:
         new_user = create_user(db , user_data)
-        db.flush()
+      
         db.commit()
         return {
             "userid":new_user.userid,
@@ -58,17 +57,14 @@ def register_user(
         raise HTTPException(status_code=500 , detail="Internal Server Error")
 
     
-
 @app.post("/admin" , response_model = UsersResponse , status_code = 201)
 def register_admin(
     user_data: UsersRequest,
     admin_key = str,
     db: Session = Depends(get_db) 
 ): 
-    db = db
     try:
         new_user = create_admin(db , user_data , admin_key)
-        db.flush()
         db.commit()
         return {
             "userid":new_user.userid,
@@ -89,7 +85,6 @@ def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db) 
 ):
-    db = db
     try:
         login_token = login_with_token(db, form_data)
         return login_token
@@ -128,7 +123,6 @@ def create_new_url(
     db = context["db"]
     try:
         new_url =  create_url(db, req ,context["current_user"])
-        db.flush()
         db.commit()
 
         return{

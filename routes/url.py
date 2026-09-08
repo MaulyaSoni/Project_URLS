@@ -70,7 +70,7 @@ def get_user_urls(
  
     data = db.query(URL).filter(URL.owner_id == current_user.userid).all()
 
-    if data is None:
+    if not data:
         raise HTTPException(status_code = 404 , detail = "User don't have created any URLs")
 
     return data
