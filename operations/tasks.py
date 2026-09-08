@@ -23,7 +23,7 @@ def record_click_metrics(url_id: int, date_time: str , referer : str , client_ip
 
         logging.info(f"Total Clicks Count updated for {url_id}")
 
-
+    #
         today = date.today()
         stmt = insert(URLStats).values(
             url_id=url_id,
