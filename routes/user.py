@@ -120,7 +120,7 @@ def fetch_all_user(
 
 def delete_user(
     db: Session,
-    userid : str,
+    userid : int,
     current_user : Users):
     
     user = db.get(Users , userid)

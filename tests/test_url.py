@@ -1,10 +1,7 @@
 from datetime import datetime
-from fastapi import Request
 from database.schema import URL , ClickLog , URLStats
 from operations.tasks import record_click_metrics
 from tests.conftest import authenticated_client , created_url
-from sqlalchemy.orm import Session 
-from database.db import get_db , SessionLocal
 
 def test_short_link_unique(authenticated_client):
     response1=authenticated_client.post("/url",json={"url":"https://example.com/1"})
@@ -31,8 +28,8 @@ def test_short_url_stats(db, created_url):
     record_click_metrics(created_url.url_id , datetime.now() , "pytest")
     record_click_metrics(created_url.url_id , datetime.now() , "pytest")
     
-    db.refresh(created_url)
-
+    db.add(created_url)
+    db.commit()
     url = db.get(URL , created_url.url_id)
     print(url.url_id , url.total_clicks)    
     assert url is not None

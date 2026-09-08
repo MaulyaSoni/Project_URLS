@@ -71,7 +71,7 @@ def get_user_urls(
  
     data = db.query(URL).filter(URL.owner_id == current_user.userid).all()
 
-    if data is None:
+    if not data:
         raise HTTPException(status_code = 404 , detail = "User don't have created any URLs")
 
     return data
@@ -84,15 +84,18 @@ def get_dashboard(
     if owner_id is None:
         raise HTTPException(status_code = 404 , detail = "No details found")
 
-    data = db.query(URL).all()
+    urls = (db.query(URL).order_by(desc(URL.url_id)).all())
 
-    logs = db.query(ClickLog).all()
+    logs = (db.query(ClickLog).order_by(desc(ClickLog.clicked_at)).all()) 
 
-    analytics = db.query(URLStats).all()
+    analytics = (db.query(URLStats).order_by(desc(URLStats.date),desc(URLStats.stats_id)).all())
 
-    data.append(logs)
-    data.append(analytics)
-    return data
+    # data.append(logs)
+    # data.append(analytics)
+    # return data
+    return{
+        "urls":urls , "click_logs" : logs , "analytics":analytics
+    }
 
 def get_all_url(
     db : Session,
@@ -102,7 +105,7 @@ def get_all_url(
 
 def get_url_stats(
     db : Session,
-    url_id : str,
+    url_id : int,
     current_user: Users):
 
     url_res = db.get(URL , url_id)
@@ -116,21 +119,23 @@ def get_url_stats(
     if url_res.owner_id != current_user.userid and current_user.user_role != 'Admin':
         raise HTTPException(status_code = 403 , detail = "!! Access restricted !!")
 
-    logs = db.query(ClickLog).filter(ClickLog.url_id == url_id).all()
+    logs = (db.query(ClickLog).filter(ClickLog.url_id == url_id).order_by(desc(ClickLog.clicked_at)).all())
 
-    analytics = db.query(URLStats).filter(URLStats.url_id == url_id).all()
+    analytics = (db.query(URLStats).filter(URLStats.url_id == url_id).order_by(desc(URLStats.date) , desc(URLStats.stats_id)).all())
 
-    res = []
-    res.append(url_res)
-    res.append(logs)
-    res.append(analytics)
+    # res = []
+    # res.append(url_res)
+    # res.append(logs)
+    # res.append(analytics)
+    # return res
     
-    return res
-
+    return{
+        "url":url_res , "logs":logs , "stats":analytics
+    }
 
 def delete_url(
     db : Session,
-    url_id : str,
+    url_id : int,
     current_user : str
 ):
     url = db.get(URL , url_id)
