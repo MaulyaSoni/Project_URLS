@@ -21,7 +21,7 @@ class URL(Base):
     url_id: Mapped[int] = mapped_column(Integer , primary_key=True , autoincrement=True)
     url : Mapped[str] = mapped_column(String(500))
     owner_id : Mapped[int] = mapped_column(Integer)
-    short_link: Mapped[str] = mapped_column(String(200))
+    short_link: Mapped[str] = mapped_column(String(200) , unique = True)
     total_clicks : Mapped[int] = mapped_column(Integer , default=0)
 
     analytics  = relationship("URLStats" , back_populates = "url_obj")

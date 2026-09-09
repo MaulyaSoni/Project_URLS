@@ -44,10 +44,10 @@ def register_user(
       
         db.commit()
         return {
-            "userid":new_user.userid,
-            "username":new_user.username,
-            "email":new_user.email,
-            "user_role":new_user.user_role
+            "userid" : new_user.userid,
+            "username" : new_user.username,
+            "email" : new_user.email,
+            "user_role" : new_user.user_role
         }
     except HTTPException:
         raise
@@ -61,17 +61,17 @@ def register_user(
 @app.post("/admin" , response_model = UsersResponse , status_code = 201)
 def register_admin(
     user_data: UsersRequest,
-    admin_key = str,
+    admin_key : str,
     db: Session = Depends(get_db) 
 ): 
     try:
         new_user = create_admin(db , user_data , admin_key)
         db.commit()
         return {
-            "userid":new_user.userid,
-            "username":new_user.username,
-            "email":new_user.email,
-            "user_role":new_user.user_role
+            "userid" : new_user.userid,
+            "username" : new_user.username,
+            "email" : new_user.email,
+            "user_role" : new_user.user_role
         }
     except HTTPException:
         raise
