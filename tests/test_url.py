@@ -25,8 +25,9 @@ def test_short_url_redirected(client , created_url):
 
 
 def test_short_url_stats(db, created_url):
-    record_click_metrics(created_url.url_id , datetime.now() , "pytest")
-    record_click_metrics(created_url.url_id , datetime.now() , "pytest")
+    # client_ip = request.client.host if request.client else "Unknown"
+    record_click_metrics(created_url.url_id , datetime.now() , "pytest" , "127.0.0.1" )
+    record_click_metrics(created_url.url_id , datetime.now() , "pytest" , "127.0.0.1")
     
     db.add(created_url)
     db.commit()
