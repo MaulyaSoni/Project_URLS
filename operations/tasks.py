@@ -45,6 +45,7 @@ def record_click_metrics(url_id: int, date_time: str , referer : str , client_ip
     except Exception:
         db.rollback()
         logging.exception("Click track handle the exception")
+        raise 
         
     finally:
         db.close()  

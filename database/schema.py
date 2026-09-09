@@ -1,6 +1,7 @@
 from sqlalchemy import Integer , String , UniqueConstraint , create_engine , Column , ForeignKey , Sequence , Date , DateTime 
 from sqlalchemy.orm import DeclarativeBase , Mapped , mapped_column , relationship
 from datetime import datetime , date
+from sqlmodel import UniqueConstraint
 
 class Base(DeclarativeBase):
     pass
@@ -34,6 +35,10 @@ class URLStats(Base):
     date : Mapped[date] = mapped_column(Date , nullable= False)
     clicks_per_day : Mapped[int] = mapped_column(Integer , default=0) 
 
+    __table_args__ = (
+        UniqueConstraint("url_id" , "date" , name = "uq_URLStats_url_date"),
+    )
+    
     url_obj = relationship("URL" , back_populates="analytics")
 
 class ClickLog(Base):
