@@ -105,8 +105,8 @@ def get_url_stats(
 
     url_res = db.get(URL , url_id)
 
-    if url_id is None :
-        raise HTTPException(status_code = 404 , detail = "Invalid ID ")
+    # if url_id is None :
+    #     raise HTTPException(status_code = 404 , detail = "Invalid ID ")
 
     if url_res is None:
         raise HTTPException(status_code = 404 , detail = "!! URL ID not found !!")
@@ -129,8 +129,8 @@ def delete_url(
 ):
     url = db.get(URL , url_id)
 
-    if url_id is None :
-        raise HTTPException(status_code = 404 , detail = "Invalid URL ID")
+    # if url_id is None :
+    #     raise HTTPException(status_code = 404 , detail = "Invalid URL ID")
 
     if url is None:
         raise HTTPException(status_code = 404 , detail = "URL ID not found")
