@@ -1,5 +1,5 @@
 from datetime import datetime , date  , timedelta , time
-from database.schema import ClickLog
+from database.schema import ClickLog , URL
 from sqlalchemy import func
 
 def click_count_today(db , url_id):
@@ -18,7 +18,9 @@ def click_count_today(db , url_id):
 
     return clicks_today
 
-def overall_stats(db  , url_id):
+
+def overall_stats(db):
+    url_id = 1
     daily_clicks = (
         db.query(
             ClickLog.url_id,

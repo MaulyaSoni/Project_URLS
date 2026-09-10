@@ -86,10 +86,11 @@ def get_dashboard(
 
     urls = (db.query(URL).order_by(desc(URL.url_id)).all())
 
+  
     logs = (db.query(ClickLog).order_by(desc(ClickLog.clicked_at)).all()) 
 
     # analytics = (db.query(URLStats).order_by(desc(URLStats.date),desc(URLStats.stats_id)).all())
-    analytics = overall_stats(db , url_id)
+    analytics = overall_stats(db)
 
     return{
         "urls":urls , "click_logs" : logs , "analytics":analytics
