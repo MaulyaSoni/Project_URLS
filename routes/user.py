@@ -133,7 +133,7 @@ def delete_user(
         if user is None:
             raise HTTPException(status_code = 404 , detail = "UserID not found ")
      
-    except (AttributeError , Exception , ValueError) as e:
+    except Exception as e:
         raise e
     
     db.delete(user)

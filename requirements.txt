@@ -1,5 +1,5 @@
 PyJWT
-pwdlib[argon-2]
+pwdlib[argon2]
 pytest
 alembic
 sqlalchemy

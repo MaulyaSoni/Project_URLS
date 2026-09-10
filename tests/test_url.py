@@ -25,8 +25,8 @@ def test_short_url_redirected(client , created_url):
 
 
 def test_short_url_stats(db, created_url):
-    record_click_metrics(created_url.url_id , datetime.now() , "pytest")
-    record_click_metrics(created_url.url_id , datetime.now() , "pytest")
+    record_click_metrics(created_url.url_id , datetime.now() , "pytest" , "127.0.0.1" )
+    record_click_metrics(created_url.url_id , datetime.now() , "pytest" , "127.0.0.1")
     
     db.add(created_url)
     db.commit()
@@ -36,20 +36,15 @@ def test_short_url_stats(db, created_url):
     assert url.total_clicks == 2
 
     logs = (
-        db.query(ClickLog)
-        .filter(ClickLog.url_id == created_url.url_id)
-        .all()
-    )
+        db.query(ClickLog).filter(ClickLog.url_id == created_url.url_id).all()
+        )
+
     print(ClickLog.url_id)
     assert len(logs) == 2
 
     stats = (
-        db.query(URLStats)
-        .filter(URLStats.url_id == created_url.url_id)
-        .all()
+        db.query(URLStats).filter(URLStats.url_id == created_url.url_id).all()
     )
 
     assert len(stats) == 1
     assert stats[0].clicks_per_day == 2
-
-
