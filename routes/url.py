@@ -1,5 +1,5 @@
 import validators
-from datetime import datetime
+from datetime import datetime , date
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
 from fastapi import BackgroundTasks , Request
@@ -11,6 +11,8 @@ from operations.key import create_unique_random_short_link
 from operations.tasks import record_click_metrics
 import logging
 from sqlalchemy.exc import IntegrityError
+from operations.query import click_count_today , overall_stats
+
 
 def create_url(
     db : Session,
@@ -86,7 +88,8 @@ def get_dashboard(
 
     logs = (db.query(ClickLog).order_by(desc(ClickLog.clicked_at)).all()) 
 
-    analytics = (db.query(URLStats).order_by(desc(URLStats.date),desc(URLStats.stats_id)).all())
+    # analytics = (db.query(URLStats).order_by(desc(URLStats.date),desc(URLStats.stats_id)).all())
+    analytics = overall_stats(db , url_id)
 
     return{
         "urls":urls , "click_logs" : logs , "analytics":analytics
@@ -105,9 +108,6 @@ def get_url_stats(
 
     url_res = db.get(URL , url_id)
 
-    # if url_id is None :
-    #     raise HTTPException(status_code = 404 , detail = "Invalid ID ")
-
     if url_res is None:
         raise HTTPException(status_code = 404 , detail = "!! URL ID not found !!")
         
@@ -116,8 +116,14 @@ def get_url_stats(
 
     logs = (db.query(ClickLog).filter(ClickLog.url_id == url_id).order_by(desc(ClickLog.clicked_at)).all())
 
-    analytics = (db.query(URLStats).filter(URLStats.url_id == url_id).order_by(desc(URLStats.date) , desc(URLStats.stats_id)).all())
-
+    # per_day_clicks = (db.query(ClickLog).filter(ClickLog.clicked_at)).all()
+    # print(per_day_clicks[0])
+    # analytics = (db.query(URLStats).filter(URLStats.url_id == url_id).order_by(desc(URLStats.date) , desc(URLStats.stats_id)).all())
+    
+    # today's stats 
+    analytics = [overall_stats(db , url_id)]
+    # analytics = [f"{date.today()} : {click_count_today(db , url_id)}"]
+    
     return{
         "url":url_res , "logs":logs , "stats":analytics
     }
@@ -128,9 +134,6 @@ def delete_url(
     current_user : str
 ):
     url = db.get(URL , url_id)
-
-    # if url_id is None :
-    #     raise HTTPException(status_code = 404 , detail = "Invalid URL ID")
 
     if url is None:
         raise HTTPException(status_code = 404 , detail = "URL ID not found")

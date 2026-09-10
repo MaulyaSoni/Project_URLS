@@ -12,6 +12,7 @@ from routes.user import create_admin , create_user , fetch_all_user , delete_use
 from routes.url import get_url_link , get_all_url , get_url_stats 
 from routes.url import create_url , delete_url , get_user_urls , get_dashboard
 from operations.user import get_current_user
+
 from dependencies.context import admin_context , current_user_context , new_user_context
 import logging
 
@@ -203,7 +204,9 @@ def fetch_user_urls(
         raise HTTPException(status_code=500 , detail="Internal Server Error")
 
 
-@app.get("/dashboard",response_model = DashboardResponse)
+@app.get("/dashboard"
+,response_model = DashboardResponse
+)
 def fetch_dashboard(
     context = Depends(admin_context)
 ):

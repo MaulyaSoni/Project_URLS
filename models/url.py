@@ -37,13 +37,13 @@ class ClickLogResponse(BaseModel):
 class DashboardResponse(BaseModel):
     urls: list[URLStatsResponse]
     click_logs : list[ClickLogResponse]
-    analytics : list[AnalyticsResponse]
+    analytics : list
 
     model_config = ConfigDict(from_attributes=True)
 
 class URLDetailsResponse(BaseModel):
     url : URLStatsResponse
     logs : list[ClickLogResponse]
-    stats : list[AnalyticsResponse]
+    stats : list
 
     model_config = ConfigDict(from_attributes=True)
