@@ -4,7 +4,7 @@ from sqlalchemy import func
 
 def click_count_today(db , url_id):
     today = datetime.now().date()
-    tomorrow = today + timedelta(days=1)
+    tomorrow = today + timedelta(days=10)
 
     clicks_today = (
         db.query(ClickLog)
@@ -32,6 +32,7 @@ def overall_stats(db  , url_id):
         .all()
     )
 
+    return daily_clicks
 
 # def clicks_overall(db , url_id):
 #     total_clicks = {

@@ -121,11 +121,13 @@ def get_url_stats(
     # analytics = (db.query(URLStats).filter(URLStats.url_id == url_id).order_by(desc(URLStats.date) , desc(URLStats.stats_id)).all())
     
     # today's stats 
-    analytics = [overall_stats(db , url_id)]
-    # analytics = [f"{date.today()} : {click_count_today(db , url_id)}"]
+    analytics = overall_stats(db , url_id)
     
+    # analytics = [f"{date.today()} : {click_count_today(db , url_id)}"]
+
+    print(analytics)
     return{
-        "url":url_res , "logs":logs , "stats":analytics
+        "url":url_res , "logs":logs , "stats": analytics
     }
 
 def delete_url(
