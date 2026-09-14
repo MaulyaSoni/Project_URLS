@@ -1,11 +1,11 @@
 import validators
 from datetime import datetime , date
-from sqlalchemy import desc
+from sqlalchemy import desc , func
 from sqlalchemy.orm import Session
 from fastapi import BackgroundTasks , Request
 from fastapi.exceptions import HTTPException
 from fastapi.responses import RedirectResponse
-from database.schema import Users , URL , ClickLog , URLStats
+from database.schema import Users , URL , ClickLog 
 from models.url import URLRequest 
 from operations.key import create_unique_random_short_link
 from operations.tasks import record_click_metrics
@@ -69,7 +69,7 @@ def get_user_urls(
     if owner_id is None:
         raise HTTPException(status_code = 404 , detail = "No details found")
  
-    data = db.query(URL).filter(URL.owner_id == current_user.userid).all()
+    data = db.query(URL).filter(URL.owner_id == current_user.userid).order_by(desc(URL.url_id)).all()
 
     if not data:
         raise HTTPException(status_code = 404 , detail = "User don't have created any URLs")
@@ -90,10 +90,33 @@ def get_dashboard(
     logs = (db.query(ClickLog).order_by(desc(ClickLog.clicked_at)).all()) 
 
     # analytics = (db.query(URLStats).order_by(desc(URLStats.date),desc(URLStats.stats_id)).all())
-    analytics = overall_stats(db)
+    # analytics = overall_stats(db)
+    daily_clicks = (
+        db.query(
+            ClickLog.url_id,
+            func.date(ClickLog.clicked_at).label("date"), 
+            func.count(ClickLog.log_id).label("clicks")
+        )
+        .group_by(
+            ClickLog.url_id, 
+            func.date(ClickLog.clicked_at)
+        )
+        .order_by(
+            desc(func.date(ClickLog.clicked_at))
+        )
+        .all()
+    )
+    daily_clicks_response = [ 
+        {
+            "url_id": row.url_id, 
+            "date": row.date,
+            "clicks": row.clicks 
+        } 
+        for row in daily_clicks 
+    ]
 
     return{
-        "urls":urls , "click_logs" : logs , "analytics":analytics
+        "urls":urls , "click_logs" : logs , "analytics":daily_clicks_response    
     }
 
 def get_all_url(
@@ -116,17 +139,42 @@ def get_url_stats(
         raise HTTPException(status_code = 403 , detail = "!! Access restricted !!")
 
     logs = (db.query(ClickLog).filter(ClickLog.url_id == url_id).order_by(desc(ClickLog.clicked_at)).all())
-
+    daily_clicks = (
+        db.query(
+            ClickLog.url_id, 
+            func.date(ClickLog.clicked_at).label("date"),
+            func.count(ClickLog.log_id).label("clicks")
+        )
+        .filter(
+            ClickLog.url_id == url_id
+        )
+        .group_by(
+            ClickLog.url_id,
+            func.date(ClickLog.clicked_at)
+        )
+        .order_by(
+            desc(func.date(ClickLog.clicked_at))
+        ) 
+        .all()
+    )
+    analytics = [
+        { 
+            "url_id": row.url_id,
+            "date": row.date,
+            "clicks": row.clicks 
+        }
+        for row in daily_clicks
+    ]
     # per_day_clicks = (db.query(ClickLog).filter(ClickLog.clicked_at)).all()
     # print(per_day_clicks[0])
     # analytics = (db.query(URLStats).filter(URLStats.url_id == url_id).order_by(desc(URLStats.date) , desc(URLStats.stats_id)).all())
     
     # today's stats 
-    analytics = overall_stats(db , url_id)
+    # analytics = overall_stats(db , url_id)
     
     # analytics = [f"{date.today()} : {click_count_today(db , url_id)}"]
 
-    print(analytics)
+    # print(analytics)
     return{
         "url":url_res , "logs":logs , "stats": analytics
     }

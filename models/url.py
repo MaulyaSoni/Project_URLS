@@ -9,20 +9,8 @@ class URLResponse(BaseModel):
     url : str
     owner_id : int 
     short_link : str 
- 
-    model_config = ConfigDict(from_attributes=True)
-
-class URLStatsResponse(URLResponse):
     total_clicks : int
-
-    model_config = ConfigDict(from_attributes=True)
-
-class AnalyticsResponse(BaseModel):
-    stats_id : int
-    url_id : int
-    date : date
-    clicks_per_day : int
-
+ 
     model_config = ConfigDict(from_attributes=True)
 
 class ClickLogResponse(BaseModel):
@@ -34,16 +22,23 @@ class ClickLogResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+class AnalyticsResponse(BaseModel):
+    url_id : int
+    date : date
+    clicks_per_day : int
+
+    model_config = ConfigDict(from_attributes=True)
+
 class DashboardResponse(BaseModel):
-    urls: list[URLStatsResponse]
+    urls: list[URLResponse]
     click_logs : list[ClickLogResponse]
-    analytics : list
+    analytics : list[AnalyticsResponse]
 
     model_config = ConfigDict(from_attributes=True)
 
 class URLDetailsResponse(BaseModel):
-    url : URLStatsResponse
+    url : URLResponse
     logs : list[ClickLogResponse]
-    stats : list
+    stats : list[AnalyticsResponse]
 
     model_config = ConfigDict(from_attributes=True)
