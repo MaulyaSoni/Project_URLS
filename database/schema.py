@@ -24,22 +24,22 @@ class URL(Base):
     short_link: Mapped[str] = mapped_column(String(200) , unique = True)
     total_clicks : Mapped[int] = mapped_column(Integer , default=0)
 
-    analytics  = relationship("URLStats" , back_populates = "url_obj")
+    # analytics  = relationship("URLStats" , back_populates = "url_obj")
     logs = relationship("ClickLog" , back_populates = "url_obj")
 
-class URLStats(Base):
-    __tablename__ = 'URL_Stats_table'
+# class URLStats(Base):
+#     __tablename__ = 'URL_Stats_table'
     
-    stats_id : Mapped[int] = mapped_column(Integer , autoincrement=True , primary_key=True)
-    url_id : Mapped[int] = mapped_column(Integer , ForeignKey("URL_table.url_id"),nullable=False)    
-    date : Mapped[date] = mapped_column(Date , nullable= False)
-    clicks_per_day : Mapped[int] = mapped_column(Integer , default=0) 
+#     stats_id : Mapped[int] = mapped_column(Integer , autoincrement=True , primary_key=True)
+#     url_id : Mapped[int] = mapped_column(Integer , ForeignKey("URL_table.url_id"),nullable=False)    
+#     date : Mapped[date] = mapped_column(Date , nullable= False)
+#     clicks_per_day : Mapped[int] = mapped_column(Integer , default=0) 
 
-    __table_args__ = (
-        UniqueConstraint("url_id" , "date" , name = "uq_URLStats_url_date"),
-    )
+#     __table_args__ = (
+#         UniqueConstraint("url_id" , "date" , name = "uq_URLStats_url_date"),
+#     )
     
-    url_obj = relationship("URL" , back_populates="analytics")
+#     url_obj = relationship("URL" , back_populates="analytics")
 
 class ClickLog(Base):
     __tablename__ = 'ClickLog_table'

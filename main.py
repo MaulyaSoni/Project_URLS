@@ -7,11 +7,12 @@ from database.db import get_db , engine , SessionLocal
 from database.schema import Base, Users
 from models.message import MessageResponse
 from models.user import UsersResponse , UsersRequest
-from models.url import URLRequest , URLResponse  , URLStatsResponse , DashboardResponse , URLDetailsResponse
+from models.url import URLRequest , URLResponse  , DashboardResponse , URLDetailsResponse
 from routes.user import create_admin , create_user , fetch_all_user , delete_user ,login_with_token ,  logout_route
 from routes.url import get_url_link , get_all_url , get_url_stats 
 from routes.url import create_url , delete_url , get_user_urls , get_dashboard
 from operations.user import get_current_user
+
 from dependencies.context import admin_context , current_user_context , new_user_context
 import logging
 
@@ -140,7 +141,7 @@ def create_new_url(
 
 #------------------------------READ---------------------
 
-@app.get("/url" , response_model = list[URLStatsResponse])
+@app.get("/urls" , response_model = list[URLResponse])
 def fetch_all_url(
     context = Depends(admin_context)
 ):
@@ -184,7 +185,9 @@ def fetch_url_from_short_link(
         raise HTTPException(status_code=500 , detail="Internal Server Error")
 
 
-@app.get("/my/urls/" , response_model= list[URLStatsResponse])
+@app.get("/my/urls/"
+ , response_model= list[URLResponse]
+ )
 def fetch_user_urls(
     context = Depends(current_user_context)
 ):
@@ -201,7 +204,9 @@ def fetch_user_urls(
     # finally:
     #     db.close()
 
-@app.get("/dashboard",response_model = DashboardResponse)
+@app.get("/dashboard"
+,response_model = DashboardResponse
+)
 def fetch_dashboard(
     context = Depends(admin_context)
 ):
