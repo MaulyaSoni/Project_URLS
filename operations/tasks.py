@@ -2,7 +2,7 @@ from datetime import date
 from sqlalchemy.orm import Session
 from fastapi.exceptions import HTTPException
 from sqlalchemy.dialects.mysql import insert
-from database.schema import URL, ClickLog, URLStats
+from database.schema import URL, ClickLog
 from database.db import SessionLocal
 import logging
 
@@ -24,20 +24,20 @@ def record_click_metrics(url_id: int, date_time: str , referer : str , client_ip
         logging.info(f"Total Clicks Count updated for {url_id}")
 
     #
-        today = date.today()
-        stmt = insert(URLStats).values(
-            url_id=url_id,
-            date=today,
-            clicks_per_day=1
+        # today = date.today()
+        # stmt = insert(URLStats).values(
+        #     url_id=url_id,
+        #     date=today,
+        #     clicks_per_day=1
             
-        )
+        # )
 
-        # If the combination of url_id and date exists, add 1 to clicks_per_day
-        update_st = stmt.on_duplicate_key_update(
-            clicks_per_day = URLStats.clicks_per_day + 1
-        )
+        # # If the combination of url_id and date exists, add 1 to clicks_per_day
+        # update_st = stmt.on_duplicate_key_update(
+        #     clicks_per_day = URLStats.clicks_per_day + 1
+        # )
 
-        db.execute(update_st)
+        # db.execute(update_st)
         db.commit()
 
         logging.info(f"Upsert operation done for {url_id}")
