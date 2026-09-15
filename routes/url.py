@@ -69,12 +69,13 @@ def get_user_urls(
     if owner_id is None:
         raise HTTPException(status_code = 404 , detail = "No details found")
  
-    data = db.query(URL).filter(URL.owner_id == current_user.userid).order_by(desc(URL.url_id)).all()
+    data = db.query(URL).filter(URL.owner_id == current_user.userid).order_by((URL.url_id)).all()
 
     if not data:
         raise HTTPException(status_code = 404 , detail = "User don't have created any URLs")
-
+    
     return data
+    
 
 def get_dashboard(
     db : Session,
@@ -161,7 +162,7 @@ def get_url_stats(
         { 
             "url_id": row.url_id,
             "date": row.date,
-            "clicks": row.clicks 
+            "clicks_per_day": row.clicks 
         }
         for row in daily_clicks
     ]

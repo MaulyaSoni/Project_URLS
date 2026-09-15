@@ -146,7 +146,7 @@ def create_new_url(
 
 #------------------------------READ---------------------
 
-@app.get("/urls" , response_model = list[URLStatsResponse])
+@app.get("/urls" , response_model = list[URLResponse])
 def fetch_all_url(
     context = Depends(admin_context)
 ):
@@ -188,7 +188,9 @@ def fetch_url_from_short_link(
         raise HTTPException(status_code=500 , detail=f"Internal Server Error {e}")
 
 
-@app.get("/my/urls/" , response_model= list[URLStatsResponse])
+@app.get("/my/urls/"
+ , response_model= list[URLResponse]
+ )
 def fetch_user_urls(
     context = Depends(current_user_context)
 ):
