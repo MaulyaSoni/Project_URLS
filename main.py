@@ -168,26 +168,13 @@ def fetch_url_from_short_link(
         db.commit()
         return og_url
 
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=500 , detail={e})
-
-    finally:
-        db.close()
- 
-        # db.commit()
-        return og_url
-
     except HTTPException:
         raise
 
     except Exception as e:
         raise HTTPException(status_code=500 , detail="Internal Server Error")
 
-
-@app.get("/my/urls/"
- , response_model= list[URLResponse]
- )
+@app.get("/my/urls/", response_model= list[URLResponse])
 def fetch_user_urls(
     context = Depends(current_user_context)
 ):
@@ -204,9 +191,7 @@ def fetch_user_urls(
     # finally:
     #     db.close()
 
-@app.get("/dashboard"
-,response_model = DashboardResponse
-)
+@app.get("/dashboard",response_model = DashboardResponse)
 def fetch_dashboard(
     context = Depends(admin_context)
 ):
@@ -219,10 +204,6 @@ def fetch_dashboard(
 
     except Exception as e:
         raise HTTPException(status_code=500 , detail="Internal Server Error")
-
-    # finally:
-    #     db.close()
-
 
 #********************************************************
 
@@ -240,10 +221,6 @@ def get_url_stats_details(
 
     except Exception as e:
         raise HTTPException(status_code=500 , detail="Internal Server Error")
-
-    # finally:
-    #     db.close()
-
 
 #---------------------------Users ---------------
 
@@ -263,10 +240,6 @@ def get_all_users(
         
     except Exception as e:
         raise HTTPException(status_code=500 , detail="Internal Server Error")
-    
-    # finally:
-    #     db.close()
-
 
 #---------------------------delete-------------------------
 @app.delete("/users/delete/{userid}" , response_model = MessageResponse , status_code = 200)
