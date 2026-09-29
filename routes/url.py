@@ -40,15 +40,15 @@ def create_url(
         )
 
     short_link = create_unique_random_short_link(db)
+    full_short_link = f"{base_domain}/url/{short_link}"
 
     new_url = URL(
         url = url_req.url,
-        short_link = short_link,
+        short_link = full_short_link,
         owner_id = current_user.userid
     )
     db.add(new_url)
 
-    full_short_link = f"{base_domain}/url/{short_link}"
     logging.info(f"New short link generated : '{current_user.userid}'")
     return new_url , full_short_link
 
@@ -206,9 +206,6 @@ def delete_url(
         db.query(ClickLog).filter(ClickLog.url_id == url_id).delete(
             synchronize_session = False)
 
-        # db.query(URLStats).filter(URLStats.url_id == url_id).delete(
-        #     synchronize_session = False)
-        
         db.delete(url)
         db.commit()
     
