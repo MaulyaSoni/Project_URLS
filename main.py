@@ -134,7 +134,7 @@ def create_new_url(
             "owner_id":new_url.owner_id,
             "total_clicks":new_url.total_clicks
         }   
-        
+
     except HTTPException:
         raise
 
@@ -167,8 +167,8 @@ def fetch_url_from_short_link(
 ):
     db = context["db"]
     try:
-
-        og_url = get_url_link(db , request , background_tasks , short_link )
+        client_ip = request.client.host if request.client else "Unknown"
+        og_url = get_url_link(db , request , background_tasks , short_link ,  client_ip)
  
         db.commit()
 

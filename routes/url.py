@@ -56,7 +56,9 @@ def get_url_link(
     db : Session ,
     request : Request,
     background_tasks : BackgroundTasks,
-    short_link : str):
+    short_link : str,
+    client_ip : str
+    ):
 
     exist_url = (db.query(URL).filter(URL.short_link == short_link).order_by(desc(URL.url_id)).first())
 
@@ -69,7 +71,7 @@ def get_url_link(
     if referer is None: 
         referer = "null" 
 
-    background_tasks.add_task(record_click_metrics, exist_url.url_id, date_time , referer)
+    background_tasks.add_task(record_click_metrics, exist_url.url_id, date_time , referer , client_ip)
     # print(exist_url.total_clicks)
     # db.commit()
 
