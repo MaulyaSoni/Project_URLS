@@ -11,11 +11,12 @@ from operations.key import create_unique_random_short_link
 from operations.tasks import record_click_metrics
 import logging
 from sqlalchemy.exc import IntegrityError
-
-
+from dotenv import load_dotenv
+import os
 
 def create_url(
     db : Session,
+    request : Request,
     url_req : URLRequest,
     current_user : Users):
 
@@ -23,9 +24,20 @@ def create_url(
         raise HTTPException (status_code = 400 ,detail="Your provided URL is not valid")
 
     existing_url = (db.query(URL).filter(URL.url == url_req.url).order_by(desc(URL.url_id)).first())
+    base_url = os.getenv("BASE_URL")
+    base_domain = str(request.base_url).rstrip("/")
+    full_existing_url = f"{base_domain}/{existing_url}"
+
     if (existing_url and existing_url.owner_id == current_user.userid):
         logging.warning(f"Re-perform operation for same url : '{current_user.userid}'")
-        raise HTTPException (status_code = 409 ,detail=f"""You already have created link for this,Short link for that is {existing_url.short_link}""")
+        raise HTTPException(
+            status_code = 409,
+            detail=
+                {
+                    "message":"You already have created link for this",
+                    "short_link":f"{base_domain}/url/{existing_url.short_link}"
+                }
+        )
 
     short_link = create_unique_random_short_link(db)
 
@@ -35,9 +47,10 @@ def create_url(
         owner_id = current_user.userid
     )
     db.add(new_url)
-    
+
+    full_short_link = f"{base_domain}/url/{short_link}"
     logging.info(f"New short link generated : '{current_user.userid}'")
-    return new_url
+    return new_url , full_short_link
 
 def get_url_link(
     db : Session ,

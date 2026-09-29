@@ -118,26 +118,29 @@ def logout(
 #----------------------------------------URL-------------------------------
 @app.post("/url" , response_model = URLResponse , status_code=201)
 def create_new_url(
+    request : Request,
     req : URLRequest,
     context = Depends(current_user_context)
 ):
     db = context["db"]
     try:
-        new_url =  create_url(db, req ,context["current_user"])
+        new_url , full_link =  create_url(db,request , req ,context["current_user"])
         db.commit()
 
         return{
             "url_id":new_url.url_id,
             "url":new_url.url,
-            "short_link":new_url.short_link,
-            "owner_id":new_url.owner_id
+            "short_link": full_link,
+            "owner_id":new_url.owner_id,
+            "total_clicks":new_url.total_clicks
         }   
+        
     except HTTPException:
         raise
 
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500 ,detail="Internal Server Error")     
+        raise HTTPException(status_code=500 ,detail=f"Internal Server Error{e}")     
 
 #------------------------------READ---------------------
 
@@ -162,16 +165,20 @@ def fetch_url_from_short_link(
     background_tasks : BackgroundTasks,
     context = Depends(new_user_context)
 ):
+    db = context["db"]
     try:
-        og_url = get_url_link(context["db"] , request , background_tasks , short_link )
+
+        og_url = get_url_link(db , request , background_tasks , short_link )
  
         db.commit()
+
         return og_url
 
     except HTTPException:
         raise
 
     except Exception as e:
+        logging.error(e)
         raise HTTPException(status_code=500 , detail="Internal Server Error")
 
 @app.get("/my/urls/", response_model= list[URLResponse])
@@ -186,6 +193,7 @@ def fetch_user_urls(
         raise
 
     except Exception as e:
+        logging.error(e)
         raise HTTPException(status_code=500 , detail="Internal Server Error")
 
     # finally:
@@ -203,6 +211,7 @@ def fetch_dashboard(
         raise
 
     except Exception as e:
+        logging.error(e)
         raise HTTPException(status_code=500 , detail="Internal Server Error")
 
 #********************************************************
