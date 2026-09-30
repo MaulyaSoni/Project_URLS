@@ -44,7 +44,7 @@ def create_url(
 
     new_url = URL(
         url = url_req.url,
-        short_link = full_short_link,
+        short_link = short_link,
         owner_id = current_user.userid
     )
     db.add(new_url)
