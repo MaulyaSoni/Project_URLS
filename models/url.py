@@ -25,8 +25,8 @@ class ClickLogResponse(BaseModel):
 class AnalyticsResponse(BaseModel):
     url_id : int
     date : date
-    clicks_per_day : int
-
+    clicks_per_day : int 
+    
     model_config = ConfigDict(from_attributes=True)
 
 class DashboardResponse(BaseModel):

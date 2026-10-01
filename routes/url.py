@@ -125,7 +125,7 @@ def get_dashboard(
         {
             "url_id": row.url_id, 
             "date": row.date,
-            "clicks": row.clicks 
+            "clicks_per_day": row.clicks 
         } 
         for row in daily_clicks 
     ]
@@ -195,7 +195,7 @@ def delete_url(
 ):
     url = db.get(URL , url_id)
 
-    if url is None:
+    if url is None:  
         raise HTTPException(status_code = 404 , detail = "URL ID not found")
         
     if url.owner_id != current_user.userid and current_user.user_role != 'Admin':
