@@ -73,8 +73,13 @@ def create_user(
         user_role="user"
     )
     db.add(new_user)
+
+    # token = create_access_token(data = {"sub": user_data.username})
+    # logging.info(f"Access token created for user : '{user_data.username}'")
+    # # return {"access_token": token,"token_type": "bearer"}
    
     logging.info(f"{user_data.username} New User created")
+    
     return new_user
 
 def create_admin(

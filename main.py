@@ -35,7 +35,7 @@ def create_tables():
 #----------------------------------CREATE----------------------------------
 
 #-----------------------------------USER-------------------------------- 
-@app.post("/user", response_model = UsersResponse , status_code=201)
+@app.post("/user",response_model= UsersResponse , status_code=201)
 def register_user(
     user_data: UsersRequest,
     db: Session = Depends(get_db)
@@ -55,6 +55,7 @@ def register_user(
 
     except Exception as e:
         db.rollback()
+        logging.error(e)
         raise HTTPException(status_code=500 , detail="Internal Server Error")
 
     
@@ -78,6 +79,7 @@ def register_admin(
 
     except Exception as e:
         db.rollback()
+        logging.error(e)
         raise HTTPException(status_code=500 , detail="Internal Server Error")
 
 
@@ -95,6 +97,7 @@ def login(
 
     except Exception as e:
         db.rollback()
+        logging.error(e)
         raise HTTPException(status_code=500 , detail="Internal Server Error")
 
 @app.post("/logout" , response_model = MessageResponse)
@@ -113,6 +116,7 @@ def logout(
     
     except Exception as e:
         db.rollback()
+        logging.error(e)
         raise HTTPException(status_code = 500 , detail="Internal Server Error")
 
 #----------------------------------------URL-------------------------------
@@ -140,7 +144,8 @@ def create_new_url(
 
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500 ,detail=f"Internal Server Error{e}")     
+        logging.error(e)
+        raise HTTPException(status_code=500 ,detail=f"Internal Server Error")     
 
 #------------------------------READ---------------------
 
@@ -153,6 +158,7 @@ def fetch_all_url(
         return urls
 
     except Exception as e:
+        logging.error(e)
         raise HTTPException(status_code=500 ,detail="Internal Server Error")
    
 
@@ -248,6 +254,7 @@ def get_all_users(
         return all_users
         
     except Exception as e:
+        logging.error(e)
         raise HTTPException(status_code=500 , detail="Internal Server Error")
 
 #---------------------------delete-------------------------
@@ -267,6 +274,7 @@ def delete_single_user(
 
     except Exception as e:
         db.rollback()
+        logging.error(e)
         raise HTTPException(status_code=500 , detail="Internal Server Error")
     
      
@@ -286,6 +294,7 @@ def delete_single_url(
 
     except Exception as e:
         db.rollback()
+        logging.error(e)
         raise HTTPException(status_code=500 , detail="Internal Server Error")
     
  
