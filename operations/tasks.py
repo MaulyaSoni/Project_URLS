@@ -22,22 +22,6 @@ def record_click_metrics(url_id: int, date_time: str , referer : str , client_ip
         },synchronize_session = False)
 
         logging.info(f"Total Clicks Count updated for {url_id}")
-
-    #
-        # today = date.today()
-        # stmt = insert(URLStats).values(
-        #     url_id=url_id,
-        #     date=today,
-        #     clicks_per_day=1
-            
-        # )
-
-        # # If the combination of url_id and date exists, add 1 to clicks_per_day
-        # update_st = stmt.on_duplicate_key_update(
-        #     clicks_per_day = URLStats.clicks_per_day + 1
-        # )
-
-        # db.execute(update_st)
         db.commit()
 
         logging.info(f"Upsert operation done for {url_id}")
