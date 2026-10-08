@@ -57,7 +57,8 @@ def create_user(
         clean_email = str(valid_email.email).strip().lower()
 
     except EmailNotValidError as e:
-        raise HTTPException(status_code = 400 , detail=f"!! Invalid email !!, str(e)")
+        logging.error(f"User creation , email error : {str(e)}")
+        raise HTTPException(status_code = 400 , detail = f"!! Invalid email !!")
 
     existing_user = (db.query(Users).filter(Users.email == clean_email).first())
   
@@ -72,8 +73,13 @@ def create_user(
         user_role="user"
     )
     db.add(new_user)
+
+    # token = create_access_token(data = {"sub": user_data.username})
+    # logging.info(f"Access token created for user : '{user_data.username}'")
+    # # return {"access_token": token,"token_type": "bearer"}
    
     logging.info(f"{user_data.username} New User created")
+    
     return new_user
 
 def create_admin(
@@ -86,7 +92,8 @@ def create_admin(
         valid_email = validate_email(user_data.email, check_deliverability=True)
   
     except EmailNotValidError as e:
-        raise HTTPException(status_code = 400 , detail=f"!! Invalid email !!, str(e)")
+        logging.error(f"User creation , email error : {str(e)}")
+        raise HTTPException(status_code = 400 , detail=f"!! Invalid email !!")
 
     if admin_key != ADMIN_KEY:
         raise HTTPException(status_code = 403 , detail="You don't have valid ADMIN KEY to create admin")
@@ -120,7 +127,7 @@ def fetch_all_user(
 
 def delete_user(
     db: Session,
-    userid : str,
+    userid : int,
     current_user : Users):
     
     user = db.get(Users , userid)
@@ -133,7 +140,8 @@ def delete_user(
         if user is None:
             raise HTTPException(status_code = 404 , detail = "UserID not found ")
      
-    except (AttributeError , Exception , ValueError) as e:
+    except Exception as e:
+        logging.error(f"Delete user : {str(e)}")
         raise e
     
     db.delete(user)
