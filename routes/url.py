@@ -109,15 +109,15 @@ def get_dashboard(
 
     if owner_id is None:
         raise HTTPException(status_code = 404 , detail = "No details found")
-    url_id = owner_id
+
     # urls = (db.query(URL).order_by(desc(URL.url_id)).all())
     builder = StatsBuilderClass()
-    print("*****",url_id)
+    # print("*****",url_id)
     data = (
         builder
-        .add_urls(db = db , url_id = url_id) 
-        .add_logs(db = db , url_id = url_id)
-        .add_daily_clicks(db = db , url_id = url_id)
+        .add_urls(db = db , owner_id = owner_id) 
+        .add_logs(db = db , owner_id = owner_id)
+        .add_daily_clicks(db = db , owner_id = owner_id)
         .build()
     )
 
