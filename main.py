@@ -205,9 +205,24 @@ def fetch_user_urls(
     # finally:
     #     db.close()
 
-@app.get("/dashboard",response_model = DashboardResponse)
-def fetch_dashboard(
+@app.get("/admin/dashboard")
+def fetch_admin_dashboard(
     context = Depends(admin_context)
+):
+    try:
+        dashboard = get_dashboard(context["db"] , context["current_user"])
+        return dashboard
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        logging.error(e)
+        raise HTTPException(status_code=500 , detail="Internal Server Error")
+
+@app.get("/my/dashboard")
+def fetch_user_dashboard(
+    context = Depends(current_user_context)
 ):
     try:
         dashboard = get_dashboard(context["db"] , context["current_user"])

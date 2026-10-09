@@ -14,7 +14,7 @@ from sqlalchemy.exc import IntegrityError
 from dotenv import load_dotenv
 import os
 from observers.subject import stats_obs
-
+from builders.builder import StatsBuilderClass
 
 def create_url(
     db : Session,
@@ -109,42 +109,51 @@ def get_dashboard(
 
     if owner_id is None:
         raise HTTPException(status_code = 404 , detail = "No details found")
-
-    urls = (db.query(URL).order_by(desc(URL.url_id)).all())
-
-  
-    logs = (db.query(ClickLog).order_by(desc(ClickLog.clicked_at)).all()) 
-
-    daily_clicks = (
-        db.query(
-            ClickLog.url_id,
-            func.date(ClickLog.clicked_at).label("date"), 
-            func.count(ClickLog.log_id).label("clicks")
-        )
-        .group_by(
-            ClickLog.url_id, 
-            func.date(ClickLog.clicked_at)
-        )
-        .order_by(
-            desc(func.date(ClickLog.clicked_at))
-        )
-        .all()
+    url_id = owner_id
+    # urls = (db.query(URL).order_by(desc(URL.url_id)).all())
+    builder = StatsBuilderClass()
+    print("*****",url_id)
+    data = (
+        builder
+        .add_urls(db = db , url_id = url_id) 
+        .add_logs(db = db , url_id = url_id)
+        .add_daily_clicks(db = db , url_id = url_id)
+        .build()
     )
-    daily_clicks_response = [ 
-        {
-            "url_id": row.url_id, 
-            "date": row.date,
-            "clicks_per_day": row.clicks 
-        } 
-        for row in daily_clicks 
-    ]
 
-    # data.append(logs)
-    # data.append(analytics)
-    # return data
-    return{
-        "urls":urls , "click_logs" : logs , "analytics":daily_clicks_response    
-    }
+    return data
+    # logs = (db.query(ClickLog).order_by(desc(ClickLog.clicked_at)).all()) 
+
+    # daily_clicks = (
+    #     db.query(
+    #         ClickLog.url_id,
+    #         func.date(ClickLog.clicked_at).label("date"), 
+    #         func.count(ClickLog.log_id).label("clicks")
+    #     )
+    #     .group_by(
+    #         ClickLog.url_id, 
+    #         func.date(ClickLog.clicked_at)
+    #     )
+    #     .order_by(
+    #         desc(func.date(ClickLog.clicked_at))
+    #     )
+    #     .all()
+    # )
+    # daily_clicks_response = [ 
+    #     {
+    #         "url_id": row.url_id, 
+    #         "date": row.date,
+    #         "clicks_per_day": row.clicks 
+    #     } 
+    #     for row in daily_clicks 
+    # ]
+
+    # # data.append(logs)
+    # # data.append(analytics)
+    # # return data
+    # return{
+    #     "urls":urls , "click_logs" : logs , "analytics":daily_clicks_response    
+    # }
 
 def get_all_url(
     db : Session,

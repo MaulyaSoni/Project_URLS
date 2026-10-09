@@ -11,4 +11,4 @@ async def lifespan(app: FastAPI):
     yield
 
     # clear when server stops for restarting the server , a safety cache
-    stats_obs._observers.clear()
+    stats_obs.observers.clear()
