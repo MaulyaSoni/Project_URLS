@@ -12,7 +12,7 @@ from routes.user import create_admin , create_user , fetch_all_user , delete_use
 from routes.url import get_url_link , get_all_url , get_url_stats 
 from routes.url import create_url , delete_url , get_user_urls , get_dashboard
 from operations.user import get_current_user
-
+from observers.obs_context import lifespan
 from dependencies.context import admin_context , current_user_context , new_user_context
 import logging
 
@@ -22,7 +22,7 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s",
 )
  
-app = FastAPI()
+app = FastAPI(lifespan = lifespan)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 #---------------events-------------------------------------------------------------------

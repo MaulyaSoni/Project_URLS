@@ -13,6 +13,8 @@ import logging
 from sqlalchemy.exc import IntegrityError
 from dotenv import load_dotenv
 import os
+from observers.subject import stats_obs
+
 
 def create_url(
     db : Session,
@@ -71,7 +73,14 @@ def get_url_link(
     if referer is None: 
         referer = "null" 
 
-    background_tasks.add_task(record_click_metrics, exist_url.url_id, date_time , referer , client_ip)
+    stats_obs.notify_observers(
+        url_id = exist_url.url_id, 
+        date_time = date_time , 
+        referer =  referer , 
+        client_ip =  client_ip
+        )
+    # background_tasks.add_task(record_click_metrics, exist_url.url_id, date_time , referer , client_ip)
+    # order_id=new_order.id, user_email=user_email, total_amount=total_amount
     # print(exist_url.total_clicks)
     # db.commit()
 
