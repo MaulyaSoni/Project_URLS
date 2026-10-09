@@ -237,7 +237,7 @@ def fetch_user_dashboard(
 
 #********************************************************
 
-@app.get("/url/stats/{url_id}" , response_model = URLDetailsResponse)
+@app.get("/url/stats/{url_id}")
 def get_url_stats_details(
     url_id : int,
     context = Depends(current_user_context)
