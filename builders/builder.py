@@ -9,9 +9,8 @@ class DynamicBuilder:
         for key , value in userBuilder.items():
             setattr(self , key , value)
     
-    def __repr__(self):
-        return {self.__dict__
-        }
+    # def __repr__(self):
+    #     return {self.__dict__}
 class StatsBuilderClass:
     
     def __init__(self):
@@ -71,7 +70,7 @@ class StatsBuilderClass:
             }
             for row in daily_clicks
         ]
-        self.userBuilder["daily_clicks_response"] = daily_clicks_response
+        self.userBuilder["analytics"] = daily_clicks_response
         return self
    
     def build(self) -> BuilderStatsInterface:
