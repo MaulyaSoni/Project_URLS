@@ -25,5 +25,5 @@ class ClickCountObserver(StatsObserver):
 
         logging.info(f"Total Clicks Count updated for {url_id}")
         db.commit()
-        logging.info(f"Upsert operation done for {url_id}")
+   
 

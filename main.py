@@ -16,6 +16,7 @@ from operations.user import get_current_user
 from observers.obs_context import lifespan
 from dependencies.context import admin_context , current_user_context , new_user_context
 import logging
+from middlewares.central_middleware import unified_logging_and_exception_middleware
 
 logging.basicConfig(
     filename="Log_employee_project.log",
@@ -27,6 +28,9 @@ app = FastAPI(lifespan = lifespan)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 #---------------events-------------------------------------------------------------------
+@app.middleware("http")
+async def add_custom_middleware(request, call_next):
+    return await unified_logging_and_exception_middleware(request, call_next)
 
 @app.on_event("startup")
 def create_tables():

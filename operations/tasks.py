@@ -24,8 +24,6 @@ def record_click_metrics(url_id: int, date_time: str , referer : str , client_ip
         logging.info(f"Total Clicks Count updated for {url_id}")
         db.commit()
 
-        logging.info(f"Upsert operation done for {url_id}")
-
     except Exception:
         db.rollback()
         logging.exception("Click track handle the exception")
