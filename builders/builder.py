@@ -4,35 +4,43 @@ from models.url import URLResponse , ClickLogResponse ,AnalyticsResponse
 from database.schema import URL , ClickLog 
 from sqlalchemy import desc , func
 
+class DynamicBuilder:
+    def __init__(self , userBuilder : dict):
+        for key , value in userBuilder.items():
+            setattr(self , key , value)
+    
+    def __repr__(self):
+        return {self.__dict__
+        }
 class StatsBuilderClass:
     
     def __init__(self):
         self.reset()
     
     def reset(self):
-        self.urls: list[URLResponse] = []
-        self.click_logs : list[ClickLogResponse] 
-        self.daily_clicks_response : list[AnalyticsResponse]
+       self.userBuilder = {}
 
 
     def add_urls(self, db: Session, owner_id: int):
-        self.urls = (
+        urls = (
             db.query(URL)
             .filter(URL.owner_id == owner_id)
             .order_by(desc(URL.url_id))
             .all()
         )
+        self.userBuilder["urls"] = urls
         return self
 
 
     def add_logs(self, db: Session, owner_id: int):
-        self.click_logs = (
+        click_logs = (
             db.query(ClickLog)
             .join(URL, ClickLog.url_id == URL.url_id)
             .filter(URL.owner_id == owner_id)
             .order_by(desc(ClickLog.clicked_at))
             .all()
         )
+        self.userBuilder["click_logs"]= click_logs
         return self
 
 
@@ -55,7 +63,7 @@ class StatsBuilderClass:
             .all()
         )
 
-        self.daily_clicks_response = [
+        daily_clicks_response = [
             {
                 "url_id": row.url_id,
                 "date": row.date,
@@ -63,15 +71,15 @@ class StatsBuilderClass:
             }
             for row in daily_clicks
         ]
-
+        self.userBuilder["daily_clicks_response"] = daily_clicks_response
         return self
    
     def build(self) -> BuilderStatsInterface:
-        details = BuilderStatsInterface(
-          urls =  self.urls,
-          click_logs = self.click_logs,
-          daily_clicks_response = self.daily_clicks_response
-        )
-        
+        # details = BuilderStatsInterface(
+        #   urls =  self.urls,
+        #   click_logs = self.click_logs,
+        #   daily_clicks_response = self.daily_clicks_response
+        # )
+        details = DynamicBuilder(self.userBuilder)
         self.reset()
         return details
