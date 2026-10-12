@@ -12,7 +12,7 @@ from routes.user import create_admin , create_user , fetch_all_user , delete_use
 from routes.url import get_url_link , get_all_url , get_url_stats 
 from routes.url import create_url , delete_url , get_user_urls , get_dashboard
 from operations.user import get_current_user
-
+from observers.obs_context import lifespan
 from dependencies.context import admin_context , current_user_context , new_user_context
 import logging
 
@@ -22,7 +22,7 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s",
 )
  
-app = FastAPI()
+app = FastAPI(lifespan = lifespan)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 #---------------events-------------------------------------------------------------------
@@ -206,9 +206,24 @@ def fetch_user_urls(
     # finally:
     #     db.close()
 
-@app.get("/dashboard",response_model = DashboardResponse)
-def fetch_dashboard(
+@app.get("/admin/dashboard")
+def fetch_admin_dashboard(
     context = Depends(admin_context)
+):
+    try:
+        dashboard = get_dashboard(context["db"] , context["current_user"])
+        return dashboard
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        logging.error(e)
+        raise HTTPException(status_code=500 , detail="Internal Server Error")
+
+@app.get("/my/dashboard")
+def fetch_user_dashboard(
+    context = Depends(current_user_context)
 ):
     try:
         dashboard = get_dashboard(context["db"] , context["current_user"])
@@ -223,7 +238,7 @@ def fetch_dashboard(
 
 #********************************************************
 
-@app.get("/url/stats/{url_id}" , response_model = URLDetailsResponse)
+@app.get("/url/stats/{url_id}")
 def get_url_stats_details(
     url_id : int,
     context = Depends(current_user_context)
