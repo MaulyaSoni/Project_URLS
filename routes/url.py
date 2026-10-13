@@ -28,7 +28,7 @@ def create_url(
     existing_url = (db.query(URL).filter(URL.url == url_req.url).order_by(desc(URL.url_id)).first())
     base_url = os.getenv("BASE_URL")
     base_domain = str(request.base_url).rstrip("/")
-    full_existing_url = f"{base_domain}/{existing_url}"
+
 
     if (existing_url and existing_url.owner_id == current_user.userid):
         logging.warning(f"Re-perform operation for same url : '{current_user.userid}'")
@@ -57,7 +57,6 @@ def create_url(
 def get_url_link(
     db : Session ,
     request : Request,
-    background_tasks : BackgroundTasks,
     short_link : str,
     client_ip : str
     ):
@@ -93,16 +92,45 @@ def get_user_urls(
 
     if owner_id is None:
         raise HTTPException(status_code = 404 , detail = "No details found")
- 
-    data = db.query(URL).filter(URL.owner_id == current_user.userid).order_by((URL.url_id)).all()
+    
+    builder = StatsBuilderClass()
+    data = (
+        builder
+        .add_urls(db = db , owner_id = owner_id)
+        .build()
+    )
+    # data = db.query(URL).filter(URL.owner_id == current_user.userid).order_by((URL.url_id)).all()
+
+    if not data:
+        raise HTTPException(status_code = 404 , detail = "User don't have created any URLs")
+    
+    return data.urls
+    
+def get_url_clicks_details(
+    db : Session,
+    current_user : Users):
+
+    owner_id = current_user.userid
+
+    if owner_id is None:
+        raise HTTPException(status_code = 404 , detail = "No details found")
+    
+    builder = StatsBuilderClass()
+    data = (
+        builder
+        .add_daily_clicks(db = db , owner_id = owner_id)
+        .add_logs(db = db , owner_id = owner_id)
+        .build()
+    )
+    # data = db.query(URL).filter(URL.owner_id == current_user.userid).order_by((URL.url_id)).all()
 
     if not data:
         raise HTTPException(status_code = 404 , detail = "User don't have created any URLs")
     
     return data
-    
 
-def get_dashboard(
+
+def get_user_dashboard(
     db : Session,
     current_user : Users):
     owner_id = current_user.userid
@@ -120,41 +148,46 @@ def get_dashboard(
         .build()
     )
 
-    return data
+    return data 
 
-    # urls = (db.query(URL).order_by(desc(URL.url_id)).all())
-    # logs = (db.query(ClickLog).order_by(desc(ClickLog.clicked_at)).all()) 
+def get_admin_dashboard(
+    db : Session ,
+    current_user : Users):
+    owner_id = current_user.userid
 
-    # daily_clicks = (
-    #     db.query(
-    #         ClickLog.url_id,
-    #         func.date(ClickLog.clicked_at).label("date"), 
-    #         func.count(ClickLog.log_id).label("clicks")
-    #     )
-    #     .group_by(
-    #         ClickLog.url_id, 
-    #         func.date(ClickLog.clicked_at)
-    #     )
-    #     .order_by(
-    #         desc(func.date(ClickLog.clicked_at))
-    #     )
-    #     .all()
-    # )
-    # daily_clicks_response = [ 
-    #     {
-    #         "url_id": row.url_id, 
-    #         "date": row.date,
-    #         "clicks_per_day": row.clicks 
-    #     } 
-    #     for row in daily_clicks 
-    # ]
+    if owner_id is None:
+        raise HTTPException(status_code = 404 , detail = "No details found")
+    
+    urls = (db.query(URL).order_by(desc(URL.url_id)).all())
+    logs = (db.query(ClickLog).order_by(desc(ClickLog.clicked_at)).all()) 
 
-    # # data.append(logs)
-    # # data.append(analytics)
-    # # return data
-    # return{
-    #     "urls":urls , "click_logs" : logs , "analytics":daily_clicks_response    
-    # }
+    daily_clicks = (
+        db.query(
+            ClickLog.url_id,
+            func.date(ClickLog.clicked_at).label("date"), 
+            func.count(ClickLog.log_id).label("clicks")
+        )
+        .group_by(
+            ClickLog.url_id, 
+            func.date(ClickLog.clicked_at)
+        )
+        .order_by(
+            desc(func.date(ClickLog.clicked_at))
+        )
+        .all()
+    )
+    daily_clicks_response = [ 
+        {
+            "url_id": row.url_id, 
+            "date": row.date,
+            "clicks_per_day": row.clicks 
+        } 
+        for row in daily_clicks 
+    ]
+
+    return{
+        "urls":urls , "click_logs" : logs , "analytics":daily_clicks_response    
+    }
 
 def get_all_url(
     db : Session,
@@ -175,48 +208,49 @@ def get_url_stats(
     if url_res.owner_id != current_user.userid and current_user.user_role != 'Admin':
         raise HTTPException(status_code = 403 , detail = "!! Access restricted !!")
  
-    builder = StatsBuilderClass()
+    # builder = StatsBuilderClass()
  
-    data = (
-        builder
-        .add_urls(db = db , owner_id = url_id) 
-        .add_logs(db = db , owner_id = url_id)
-        .add_daily_clicks(db = db , owner_id = url_id)
-        .build()
-    )
-
-    return data
-    # logs = (db.query(ClickLog).filter(ClickLog.url_id == url_id).order_by(desc(ClickLog.clicked_at)).all())
-    # daily_clicks = (
-    #     db.query(
-    #         ClickLog.url_id, 
-    #         func.date(ClickLog.clicked_at).label("date"),
-    #         func.count(ClickLog.log_id).label("clicks")
-    #     )
-    #     .filter(
-    #         ClickLog.url_id == url_id
-    #     )
-    #     .group_by(
-    #         ClickLog.url_id,
-    #         func.date(ClickLog.clicked_at)
-    #     )
-    #     .order_by(
-    #         desc(func.date(ClickLog.clicked_at))
-    #     ) 
-    #     .all()
+    # data = (
+    #     builder
+    #     .add_urls(db = db , owner_id = url_id) 
+    #     .add_logs(db = db , owner_id = url_id)
+    #     .add_daily_clicks(db = db , owner_id = url_id)
+    #     .build()
     # )
-    # analytics = [
-    #     { 
-    #         "url_id": row.url_id,
-    #         "date": row.date,
-    #         "clicks_per_day": row.clicks 
-    #     }
-    #     for row in daily_clicks
-    # ]
+
+    # return data
+    logs = (db.query(ClickLog).filter(ClickLog.url_id == url_id).order_by(desc(ClickLog.clicked_at)).all())
+
+    daily_clicks = (
+        db.query(
+            ClickLog.url_id, 
+            func.date(ClickLog.clicked_at).label("date"),
+            func.count(ClickLog.log_id).label("clicks")
+        )
+        .filter(
+            ClickLog.url_id == url_id
+        )
+        .group_by(
+            ClickLog.url_id,
+            func.date(ClickLog.clicked_at)
+        )
+        .order_by(
+            desc(func.date(ClickLog.clicked_at))
+        ) 
+        .all()
+    )
+    analytics = [
+        { 
+            "url_id": row.url_id,
+            "date": row.date,
+            "clicks_per_day": row.clicks 
+        }
+        for row in daily_clicks
+    ]
    
-    # return{
-    #     "url":url_res , "logs":logs , "stats": analytics
-    # }
+    return{
+        "url":url_res , "click_logs":logs , "analytics": analytics
+    }
 
 def delete_url(
     db : Session,

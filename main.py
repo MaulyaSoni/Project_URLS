@@ -7,14 +7,16 @@ from database.db import get_db , engine , SessionLocal
 from database.schema import Base, Users
 from models.message import MessageResponse
 from models.user import UsersResponse , UsersRequest
-from models.url import URLRequest , URLResponse  , DashboardResponse , URLDetailsResponse
-from routes.user import create_admin , create_user , fetch_all_user , delete_user ,login_with_token ,  logout_route
+from models.url import URLRequest , URLResponse  , DashboardResponse , URLDetailsResponse , AnalyticsResponse , ClickStatsResponse
+from routes.user import create_admin , create_user , fetch_all_user , delete_user ,login_with_token ,logout_route
 from routes.url import get_url_link , get_all_url , get_url_stats 
-from routes.url import create_url , delete_url , get_user_urls , get_dashboard
+from routes.url import create_url , delete_url , get_user_urls , get_user_dashboard , get_admin_dashboard
+from routes.url import get_url_clicks_details
 from operations.user import get_current_user
 from observers.obs_context import lifespan
 from dependencies.context import admin_context , current_user_context , new_user_context
 import logging
+from middlewares.central_middleware import unified_logging_and_exception_middleware
 
 logging.basicConfig(
     filename="Log_employee_project.log",
@@ -26,6 +28,9 @@ app = FastAPI(lifespan = lifespan)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 #---------------events-------------------------------------------------------------------
+@app.middleware("http")
+async def add_custom_middleware(request, call_next):
+    return await unified_logging_and_exception_middleware(request, call_next)
 
 @app.on_event("startup")
 def create_tables():
@@ -165,17 +170,36 @@ def fetch_all_url(
 
 #************************************************************
 
+@app.get("/url/click_stats"
+, response_model = ClickStatsResponse
+
+)
+def fetch_url_clicks(
+    context = Depends(current_user_context)
+):
+    try:
+        url_click_stats = get_url_clicks_details(context["db"] , context["current_user"])
+        return url_click_stats 
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        logging.error(e)
+        raise HTTPException(status_code=500 , detail="Internal Server Error")
+
 @app.get("/url/{short_link}")
 def fetch_url_from_short_link(
     short_link : str , 
     request : Request,
-    background_tasks : BackgroundTasks,
     context = Depends(new_user_context)
 ):
     db = context["db"]
     try:
         client_ip = request.client.host if request.client else "Unknown"
-        og_url = get_url_link(db , request , background_tasks , short_link ,  client_ip)
+        og_url = get_url_link(
+            db , request , short_link , client_ip
+        )
  
         db.commit()
 
@@ -188,7 +212,9 @@ def fetch_url_from_short_link(
         logging.error(e)
         raise HTTPException(status_code=500 , detail="Internal Server Error")
 
-@app.get("/my/urls/", response_model= list[URLResponse])
+@app.get("/my/urls"
+, response_model= list[URLResponse]
+)
 def fetch_user_urls(
     context = Depends(current_user_context)
 ):
@@ -206,12 +232,12 @@ def fetch_user_urls(
     # finally:
     #     db.close()
 
-@app.get("/admin/dashboard")
+@app.get("/admin/dashboard" , response_model = DashboardResponse)
 def fetch_admin_dashboard(
     context = Depends(admin_context)
 ):
     try:
-        dashboard = get_dashboard(context["db"] , context["current_user"])
+        dashboard = get_admin_dashboard(context["db"] , context["current_user"])
         return dashboard
 
     except HTTPException:
@@ -221,12 +247,14 @@ def fetch_admin_dashboard(
         logging.error(e)
         raise HTTPException(status_code=500 , detail="Internal Server Error")
 
-@app.get("/my/dashboard")
+@app.get("/my/dashboard"
+, response_model = DashboardResponse
+)
 def fetch_user_dashboard(
     context = Depends(current_user_context)
 ):
     try:
-        dashboard = get_dashboard(context["db"] , context["current_user"])
+        dashboard = get_user_dashboard(context["db"] , context["current_user"])
         return dashboard
 
     except HTTPException:
@@ -238,7 +266,9 @@ def fetch_user_dashboard(
 
 #********************************************************
 
-@app.get("/url/stats/{url_id}")
+@app.get("/url/stats/{url_id}"
+, response_model = URLDetailsResponse
+)
 def get_url_stats_details(
     url_id : int,
     context = Depends(current_user_context)

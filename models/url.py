@@ -23,22 +23,26 @@ class ClickLogResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 class AnalyticsResponse(BaseModel):
-    url_id : int
-    date : date
-    clicks_per_day : int 
+    url_id : int | None
+    date : date | None
+    clicks_per_day : int | None 
     
     model_config = ConfigDict(from_attributes=True)
 
 class DashboardResponse(BaseModel):
-    urls: list[URLResponse]
-    click_logs : list[ClickLogResponse]
-    analytics : list[AnalyticsResponse]
+    urls: list[URLResponse] | None
+    click_logs : list[ClickLogResponse] | None
+    analytics : list[AnalyticsResponse] | None
 
     model_config = ConfigDict(from_attributes=True)
 
 class URLDetailsResponse(BaseModel):
-    url : URLResponse
-    logs : list[ClickLogResponse]
-    stats : list[AnalyticsResponse]
+    url : URLResponse | None
+    click_logs : list[ClickLogResponse] | None
+    analytics : list[AnalyticsResponse]| None
 
     model_config = ConfigDict(from_attributes=True)
+
+class ClickStatsResponse(BaseModel):
+    click_logs : list[ClickLogResponse]
+    analytics : list[AnalyticsResponse]
