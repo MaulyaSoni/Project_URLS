@@ -29,7 +29,7 @@ def login_with_token(
     logging.info(f"Access token created for user : '{form_data.username}'")
     
     return {"access_token": token,"token_type": "bearer"}
-
+ 
 def logout_route(db : Session , token: str = Depends(oauth2_scheme)):
    
     #for safety

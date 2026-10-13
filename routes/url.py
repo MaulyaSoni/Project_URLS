@@ -28,7 +28,7 @@ def create_url(
     existing_url = (db.query(URL).filter(URL.url == url_req.url).order_by(desc(URL.url_id)).first())
     base_url = os.getenv("BASE_URL")
     base_domain = str(request.base_url).rstrip("/")
-    full_existing_url = f"{base_domain}/{existing_url}"
+
 
     if (existing_url and existing_url.owner_id == current_user.userid):
         logging.warning(f"Re-perform operation for same url : '{current_user.userid}'")

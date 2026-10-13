@@ -1,8 +1,6 @@
-from sqlalchemy import Integer , String , UniqueConstraint , create_engine , Column , ForeignKey , Sequence , Date , DateTime 
+from sqlalchemy import Integer , String  , Column , ForeignKey , Sequence , Date , DateTime 
 from sqlalchemy.orm import DeclarativeBase , Mapped , mapped_column , relationship
 from datetime import datetime , date
-from sqlmodel import UniqueConstraint
-
 class Base(DeclarativeBase):
     pass
 
