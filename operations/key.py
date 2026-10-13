@@ -3,11 +3,11 @@ import string
 from sqlalchemy.orm import Session
 from database.schema import URL
 
-def create_random_key(length: int = 5) -> str:
+def create_random_key(length: int = 15) -> str:
     chars = string.ascii_uppercase + string.digits
     return "".join(secrets.choice(chars) for _ in range(length))
 
-def check_short_link(db : Session , short_link = str):
+def check_short_link(db : Session , short_link : str):
     return db.query(URL).filter(URL.short_link == short_link).first() 
 
 def create_unique_random_short_link(db: Session) -> str:
