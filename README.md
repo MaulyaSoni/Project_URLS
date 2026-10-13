@@ -1,5 +1,5 @@
 # PROJECT:-  URL ANALYSER with CLICK Analysis
-
+- The URL short link generator and its total clicks with time , referer's location along with the clicks per day and proper stats  
 
 - Here first the user comes to the app
 goes to  /register route , here there will be input of three things -> username , email , password .
