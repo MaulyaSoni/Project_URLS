@@ -1,11 +1,11 @@
-from observers.interface import StatsObserver
-from database.db import SessionLocal
+import logging
 from datetime import date
 from sqlalchemy.orm import Session
-from fastapi.exceptions import HTTPException
 from sqlalchemy.dialects.mysql import insert
+from fastapi.exceptions import HTTPException
+from database.db import SessionLocal
 from database.schema import URL, ClickLog
-import logging
+from observers.interface import StatsObserver
 
 class ClickLogObserver(StatsObserver):
     
@@ -25,6 +25,7 @@ class ClickLogObserver(StatsObserver):
         logging.info(f"Click_log created {date_time}")
 
 class ClickCountObserver(StatsObserver):
+
     def update(self , url_id :int , date_time ,referer : str , referer_domain : str ,client_ip : str) -> None:
 
         db : Session = SessionLocal()
@@ -41,9 +42,10 @@ class ClickCountObserver(StatsObserver):
 
 class ClickMetricsObserver(StatsObserver):
 
-    def update(self,url_id: int,date_time,referer: str,referer_domain: str,client_ip: str
-    ) -> None:
+    def update(self , url_id: int , date_time , referer : str , referer_domain : str , client_ip : str) -> None:
+        
         db : Session = SessionLocal()
+        
         try:
             click_log = ClickLog(
                 url_id=url_id,
@@ -53,6 +55,7 @@ class ClickMetricsObserver(StatsObserver):
                 ip=client_ip
             )
             db.add(click_log)
+        
             updated_rows = (
                 db.query(URL)
                 .filter(URL.url_id == url_id)

@@ -1,13 +1,15 @@
+import logging
+from datetime import date
 from sqlalchemy.orm import Session
-from fastapi.exceptions import HTTPException
 from sqlalchemy.exc import IntegrityError
 from fastapi import FastAPI , Request, Depends , BackgroundTasks
 from fastapi.security import OAuth2PasswordRequestForm , OAuth2PasswordBearer
+from fastapi.exceptions import HTTPException
 from database.db import get_db , SessionLocal
 from database.schema import Users
-from models.message import MessageResponse
 from models.user import UsersResponse , UsersRequest
 from models.url import URLRequest , URLResponse  , DashboardResponse , URLDetailsResponse , AnalyticsResponse , ClickStatsResponse
+from models.message import MessageResponse
 from routes.user import create_admin , create_user , fetch_all_user , delete_user ,login_with_token ,logout_route
 from routes.url import get_url_link , get_all_url , get_url_stats 
 from routes.url import create_url , delete_url , get_user_dashboard , get_admin_dashboard
@@ -15,8 +17,6 @@ from routes.url import get_urls_clicks_details , get_user_urls
 from operations.user import get_current_user
 from observers.obs_context import lifespan
 from dependencies.context import admin_context , current_user_context , new_user_context
-import logging
-from datetime import date
 from middlewares.central_middleware import unified_logging_and_exception_middleware
 
 logging.basicConfig(
@@ -28,7 +28,6 @@ logging.basicConfig(
 app = FastAPI(lifespan = lifespan)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
-#---------------events-------------------------------------------------------------------
 @app.middleware("http")
 async def add_custom_middleware(request, call_next):
     return await unified_logging_and_exception_middleware(request, call_next)
@@ -38,17 +37,13 @@ async def add_custom_middleware(request, call_next):
 #     # if targetted database not exist , then generates the all defined db and tables 
 #     Base.metadata.create_all(engine)   
 
-#----------------------------------CREATE----------------------------------
-
-#-----------------------------------USER-------------------------------- 
-@app.post("/user",response_model= UsersResponse , status_code=201)
+@app.post("/user", response_model= UsersResponse , status_code=201)
 def register_user(
     user_data: UsersRequest,
     db: Session = Depends(get_db)
 ):
     try:
         new_user = create_user(db , user_data)
-      
         db.commit()
         return {
             "userid" : new_user.userid,
@@ -124,7 +119,6 @@ def logout(
         logging.error(e)
         raise HTTPException(status_code = 500 , detail="Internal Server Error")
 
-#----------------------------------------URL-------------------------------
 @app.post("/url" , response_model = URLResponse , status_code=201)
 def create_new_url(
     request : Request,
@@ -150,7 +144,6 @@ def create_new_url(
         logging.error(e)
         raise HTTPException(status_code=500 ,detail=f"Internal Server Error")     
 
-#------------------------------READ---------------------
 
 @app.get("/urls" , response_model = list[URLResponse])
 def fetch_all_url(
@@ -163,14 +156,9 @@ def fetch_all_url(
     except Exception as e:
         logging.exception(e)
         raise HTTPException(status_code=500 ,detail="Internal Server Error")
-   
 
-#************************************************************
 
-@app.get("/urls/click_stats"
-, response_model = ClickStatsResponse
-
-)
+@app.get("/urls/click_stats", response_model = ClickStatsResponse)
 def fetch_url_clicks(
     start_date : date | None = None,
     end_date : date | None = None, 
@@ -187,6 +175,7 @@ def fetch_url_clicks(
         logging.exception(e)
         raise HTTPException(status_code=500 , detail="Internal Server Error")
 
+
 @app.get("/url/{short_link}")
 def fetch_url_from_short_link(
     short_link : str , 
@@ -196,13 +185,13 @@ def fetch_url_from_short_link(
     db = context["db"]
     try:
         client_ip = request.client.host if request.client else "Unknown"
-        og_url = get_url_link(
-            db , request , short_link , client_ip
+        return get_url_link(
+            db,
+            request,
+            short_link,
+            client_ip
         )
- 
         db.commit()
-
-        return og_url
 
     except HTTPException:
         raise
@@ -212,9 +201,7 @@ def fetch_url_from_short_link(
         logging.exception("Failed to process the short_link redirection",e)
         raise HTTPException(status_code=500 , detail="Internal Server Error")
 
-@app.get("/my/urls"
-, response_model= list[URLResponse]
-)
+@app.get("/my/urls", response_model= list[URLResponse])
 def fetch_user_urls(
     context = Depends(current_user_context)
 ):
@@ -229,8 +216,6 @@ def fetch_user_urls(
         logging.exception(e)
         raise HTTPException(status_code=500 , detail="Internal Server Error")
 
-    # finally:
-    #     db.close()
 
 @app.get("/admin/dashboard" , response_model = DashboardResponse)
 def fetch_admin_dashboard(
@@ -247,9 +232,7 @@ def fetch_admin_dashboard(
         logging.exception(e)
         raise HTTPException(status_code=500 , detail="Internal Server Error")
 
-@app.get("/my/dashboard"
-, response_model = DashboardResponse
-)
+@app.get("/my/dashboard" , response_model = DashboardResponse)
 def fetch_user_dashboard(
     context = Depends(current_user_context)
 ):
@@ -264,11 +247,8 @@ def fetch_user_dashboard(
         logging.exception(e)
         raise HTTPException(status_code=500 , detail="Internal Server Error")
 
-#********************************************************
 
-@app.get("/url/stats/{url_id}"
-, response_model = URLDetailsResponse
-)
+@app.get("/url/stats/{url_id}", response_model = URLDetailsResponse)
 def get_url_stats_details(
     url_id : int,
     start_date : date | None = None,
@@ -285,8 +265,6 @@ def get_url_stats_details(
     except Exception as e:
         logging.exception(e)
         raise HTTPException(status_code=500 , detail="Internal Server Error")
-
-#---------------------------Users ---------------
 
 @app.get("/users/me" , response_model = UsersResponse)
 def get_my_info(
@@ -306,8 +284,10 @@ def get_all_users(
         logging.exception(e)
         raise HTTPException(status_code=500 , detail="Internal Server Error")
 
-#---------------------------delete-------------------------
-@app.delete("/users/delete/{userid}" , response_model = MessageResponse , status_code = 200)
+
+@app.delete("/users/delete/{userid}",
+    response_model = MessageResponse , 
+    status_code = 200)
 def delete_single_user(
     userid : int,
     context = Depends(admin_context)
@@ -326,7 +306,9 @@ def delete_single_user(
         raise HTTPException(status_code=500 , detail="Internal Server Error")
     
      
-@app.delete("/url/delete/{url_id}" , response_model = MessageResponse , status_code = 200)
+@app.delete("/url/delete/{url_id}" ,
+    response_model = MessageResponse ,
+    status_code = 200)
 def delete_single_url(
     url_id : int,
     context = Depends(current_user_context)

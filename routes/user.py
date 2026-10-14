@@ -15,7 +15,6 @@ load_dotenv()
 ADMIN_KEY = os.getenv("ADMIN_KEY")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
-#----------------------------------------------------
 
 def login_with_token(
     db : Session,
@@ -31,22 +30,12 @@ def login_with_token(
     return {"access_token": token,"token_type": "bearer"}
  
 def logout_route(db : Session , token: str = Depends(oauth2_scheme)):
-   
-    #for safety
-    
-    # existing_token = db.query(RevokedToken).filter(RevokedToken.token == token).first()
-    # if existing_token:
-    #     raise HTTPException(
-    #         status_code=400,
-    #         detail="Token already revoked or logged out"
-    #     )
-    
+
     db_token = RevokedToken(token=token)
     db.add(db_token)
     db.commit()
     return{"message" : "User Logout Success"}
 
-#----------------------------------------------------------
 
 def create_user(
     db: Session,
@@ -74,10 +63,6 @@ def create_user(
     )
     db.add(new_user)
 
-    # token = create_access_token(data = {"sub": user_data.username})
-    # logging.info(f"Access token created for user : '{user_data.username}'")
-    # # return {"access_token": token,"token_type": "bearer"}
-   
     logging.info(f"{user_data.username} New User created")
     
     return new_user
@@ -112,9 +97,7 @@ def create_admin(
     db.add(new_user)
 
     logging.info(f"New admin : {user_data.username} created")
-    return new_user
-
-#-------------------------------------------------------------------
+    return new_user    
 
 def fetch_all_user(
     db:Session,
@@ -123,7 +106,6 @@ def fetch_all_user(
     return db.query(Users).all()
 
 
-#----------------------------------------------------------
 
 def delete_user(
     db: Session,

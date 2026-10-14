@@ -1,7 +1,12 @@
+import os
+import logging
 import validators
+from dotenv import load_dotenv
 from datetime import datetime , date , time , timedelta
+from urllib.parse import urlparse
 from sqlalchemy import desc , func
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from fastapi import BackgroundTasks , Request
 from fastapi.exceptions import HTTPException
 from fastapi.responses import RedirectResponse
@@ -9,11 +14,6 @@ from database.schema import Users , URL , ClickLog
 from models.url import URLRequest 
 from operations.key import create_unique_random_short_link
 from operations.tasks import record_click_metrics
-import logging
-from sqlalchemy.exc import IntegrityError
-from dotenv import load_dotenv
-import os
-from urllib.parse import urlparse
 from observers.subject import stats_obs
 from builders.builder import StatsBuilderClass
 
@@ -21,7 +21,8 @@ def create_url(
     db : Session,
     request : Request,
     url_req : URLRequest,
-    current_user : Users):
+    current_user : Users
+    ):
 
     if not validators.url(url_req.url):
         raise HTTPException (status_code = 400 ,detail="Your provided URL is not valid")
@@ -29,7 +30,6 @@ def create_url(
     existing_url = (db.query(URL).filter(URL.url == url_req.url).order_by(desc(URL.url_id)).first())
     base_url = os.getenv("BASE_URL")
     base_domain = str(request.base_url).rstrip("/")
-
 
     if (existing_url and existing_url.owner_id == current_user.userid):
         logging.warning(f"Re-perform operation for same url : '{current_user.userid}'")
@@ -62,22 +62,26 @@ def get_url_link(
     client_ip : str
     ):
 
-    exist_url = (db.query(URL).filter(URL.short_link == short_link).order_by(desc(URL.url_id)).first())
+    exist_url = (
+        db.query(URL)
+        .filter(URL.short_link == short_link)
+        .order_by(desc(URL.url_id)).
+        first()
+    )
 
     if exist_url is None:
         raise HTTPException(status_code=404,detail=f"Invalid Link , can't redirect to URL")
 
     referer = request.headers.get("referer") or "null"
+    
     if referer : 
         referer_domain = urlparse(referer).hostname or "Unknown"
+    
     else:
         referer = "Direct"
         referer_domain = "Direct"
 
     date_time = datetime.now()
-
-    if referer is None: 
-        referer = "null" 
 
     stats_obs.notify_observers(
         url_id = exist_url.url_id, 
@@ -86,16 +90,13 @@ def get_url_link(
         referer_domain = referer_domain,
         client_ip = client_ip
         )
-    # background_tasks.add_task(record_click_metrics, exist_url.url_id, date_time , referer , client_ip)
-    # order_id=new_order.id, user_email=user_email, total_amount=total_amount
-    # print(exist_url.total_clicks)
-    # db.commit()
 
     return RedirectResponse(url = exist_url.url , status_code = 303)
 
 def get_user_urls(
     db : Session,
     current_user : Users):
+
     owner_id = current_user.userid
 
     if owner_id is None:
@@ -293,78 +294,7 @@ def get_all_url(
 #     return{
 #         "url":url_res , "click_logs":logs , "analytics": analytics
 #     }
-def get_url_stats(
-    db: Session,
-    url_id: int,
-    current_user: Users,
-    start_date: date | None = None,
-    end_date: date | None = None
-):
 
-    url_res = db.get(URL, url_id)
-
-    if url_res is None:
-        raise HTTPException(
-            status_code=404,
-            detail="URL ID not found"
-        )
-
-    if url_res.owner_id != current_user.userid and current_user.user_role != "Admin":
-        raise HTTPException(
-            status_code=403,
-            detail="Access restricted"
-        )
-
-    analytics_data = build_click_analytics(
-        db,[url_id],start_date,end_date
-    )
-
-    logs = (
-        get_filtered_click_logs(
-            db,
-            [url_id],
-            start_date,
-            end_date
-        )
-        .order_by(desc(ClickLog.clicked_at))
-        .all()
-    )
-
-    return {
-        "url": url_res,
-        "click_logs": logs,
-        "analytics": analytics_data["analytics"],
-        "referer_analytics": analytics_data["referer_analytics"]
-    }
-def get_filtered_click_logs(
-    db: Session,
-    url_ids: list[int],
-    start_date: date | None = None ,
-    end_date: date | None = None
-):
-
-    if start_date and end_date and start_date > end_date:
-        raise HTTPException(
-            status_code=422,
-            detail="start_date cannot be after end_date"
-        )
-
-    if not url_ids:
-        return db.query(ClickLog).filter(False)
-
-    query = db.query(ClickLog).filter(ClickLog.url_id.in_(url_ids))
-
-    if start_date:
-        query = query.filter(
-            ClickLog.clicked_at >= datetime.combine(start_date,time.min)
-        )
-
-    if end_date:
-        query = query.filter(
-            ClickLog.clicked_at < datetime.combine(end_date + timedelta(days=1),time.min)
-        )
-
-    return query
 
 def build_click_analytics(
     db: Session,
@@ -449,6 +379,80 @@ def build_click_analytics(
         "referer_analytics": referer_analytics
     }
 
+
+def get_filtered_click_logs(
+    db: Session,
+    url_ids: list[int],
+    start_date: date | None = None ,
+    end_date: date | None = None
+):
+
+    if start_date and end_date and start_date > end_date:
+        raise HTTPException(
+            status_code=422,
+            detail="start_date cannot be after end_date"
+        )
+
+    if not url_ids:
+        return db.query(ClickLog).filter(False)
+
+    query = db.query(ClickLog).filter(ClickLog.url_id.in_(url_ids))
+
+    if start_date:
+        query = query.filter(
+            ClickLog.clicked_at >= datetime.combine(start_date,time.min)
+        )
+
+    if end_date:
+        query = query.filter(
+            ClickLog.clicked_at < datetime.combine(end_date + timedelta(days=1),time.min)
+        )
+
+    return query
+
+def get_url_stats(
+    db: Session,
+    url_id: int,
+    current_user: Users,
+    start_date: date | None = None,
+    end_date: date | None = None
+):
+
+    url_res = db.get(URL, url_id)
+
+    if url_res is None:
+        raise HTTPException(
+            status_code=404,
+            detail="URL ID not found"
+        )
+
+    if url_res.owner_id != current_user.userid and current_user.user_role != "Admin":
+        raise HTTPException(
+            status_code=403,
+            detail="Access restricted"
+        )
+
+    analytics_data = build_click_analytics(
+        db,[url_id],start_date,end_date
+    )
+
+    logs = (
+        get_filtered_click_logs(
+            db,
+            [url_id],
+            start_date,
+            end_date
+        )
+        .order_by(desc(ClickLog.clicked_at))
+        .all()
+    )
+
+    return {
+        "url": url_res,
+        "click_logs": logs,
+        "analytics": analytics_data["analytics"],
+        "referer_analytics": analytics_data["referer_analytics"]
+    }
 
 def delete_url(
     db : Session,
