@@ -3,8 +3,8 @@ from fastapi.exceptions import HTTPException
 from sqlalchemy.exc import IntegrityError
 from fastapi import FastAPI , Request, Depends , BackgroundTasks
 from fastapi.security import OAuth2PasswordRequestForm , OAuth2PasswordBearer
-from database.db import get_db , engine , SessionLocal
-from database.schema import Base, Users
+from database.db import get_db , SessionLocal
+from database.schema import Users
 from models.message import MessageResponse
 from models.user import UsersResponse , UsersRequest
 from models.url import URLRequest , URLResponse  , DashboardResponse , URLDetailsResponse , AnalyticsResponse , ClickStatsResponse
@@ -32,10 +32,10 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 async def add_custom_middleware(request, call_next):
     return await unified_logging_and_exception_middleware(request, call_next)
 
-@app.on_event("startup")
-def create_tables():
-    # if targetted database not exist , then generates the all defined db and tables 
-    Base.metadata.create_all(engine)   
+# @app.on_event("startup")
+# def create_tables():
+#     # if targetted database not exist , then generates the all defined db and tables 
+#     Base.metadata.create_all(engine)   
 
 #----------------------------------CREATE----------------------------------
 
@@ -113,7 +113,6 @@ def logout(
     db = context["db"]
     try: 
         logout = logout_route(db , token)
-        db.commit()
         return logout
 
     except HTTPException:
@@ -134,8 +133,6 @@ def create_new_url(
     db = context["db"]
     try:
         new_url , full_link =  create_url(db,request , req ,context["current_user"])
-        db.commit()
-
         return{
             "url_id":new_url.url_id,
             "url":new_url.url,
@@ -163,7 +160,7 @@ def fetch_all_url(
         return urls
 
     except Exception as e:
-        logging.error(e)
+        logging.exception(e)
         raise HTTPException(status_code=500 ,detail="Internal Server Error")
    
 
@@ -184,7 +181,7 @@ def fetch_url_clicks(
         raise
 
     except Exception as e:
-        logging.error(e)
+        logging.exception(e)
         raise HTTPException(status_code=500 , detail="Internal Server Error")
 
 @app.get("/url/{short_link}")
@@ -208,7 +205,8 @@ def fetch_url_from_short_link(
         raise
 
     except Exception as e:
-        logging.error(e)
+        db.rollback()
+        logging.exception("Failed to process the short_link redirection",e)
         raise HTTPException(status_code=500 , detail="Internal Server Error")
 
 @app.get("/my/urls"
@@ -225,7 +223,7 @@ def fetch_user_urls(
         raise
 
     except Exception as e:
-        logging.error(e)
+        logging.exception(e)
         raise HTTPException(status_code=500 , detail="Internal Server Error")
 
     # finally:
@@ -243,7 +241,7 @@ def fetch_admin_dashboard(
         raise
 
     except Exception as e:
-        logging.error(e)
+        logging.exception(e)
         raise HTTPException(status_code=500 , detail="Internal Server Error")
 
 @app.get("/my/dashboard"
@@ -260,7 +258,7 @@ def fetch_user_dashboard(
         raise
 
     except Exception as e:
-        logging.error(e)
+        logging.exception(e)
         raise HTTPException(status_code=500 , detail="Internal Server Error")
 
 #********************************************************
@@ -280,6 +278,7 @@ def get_url_stats_details(
         raise
 
     except Exception as e:
+        logging.exception(e)
         raise HTTPException(status_code=500 , detail="Internal Server Error")
 
 #---------------------------Users ---------------
@@ -299,7 +298,7 @@ def get_all_users(
         return all_users
         
     except Exception as e:
-        logging.error(e)
+        logging.exception(e)
         raise HTTPException(status_code=500 , detail="Internal Server Error")
 
 #---------------------------delete-------------------------
@@ -311,7 +310,6 @@ def delete_single_user(
     db = context["db"]
     try:
         delete_req = delete_user(db , userid , context["current_user"])
-        db.commit()
         return delete_req
 
     except HTTPException:
@@ -331,7 +329,6 @@ def delete_single_url(
     db = context["db"]
     try:
         delete_req = delete_url(db , url_id , context["current_user"])
-        db.commit()
         return delete_req
 
     except HTTPException:

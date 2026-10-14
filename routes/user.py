@@ -43,7 +43,7 @@ def logout_route(db : Session , token: str = Depends(oauth2_scheme)):
     
     db_token = RevokedToken(token=token)
     db.add(db_token)
-    # db.commit()
+    db.commit()
     return{"message" : "User Logout Success"}
 
 #----------------------------------------------------------
@@ -145,5 +145,7 @@ def delete_user(
         raise e
     
     db.delete(user)
+    db.commit()
+    
     logging.info(f"{userid} , user deleted by : '{current_user.username}'")
     return {"message" : f"{userid} , deleted successfully"}

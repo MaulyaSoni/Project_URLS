@@ -50,7 +50,7 @@ def create_url(
         owner_id = current_user.userid
     )
     db.add(new_url)
-
+    db.commit()
     logging.info(f"New short link generated : '{current_user.userid}'")
     return new_url , full_short_link
 
