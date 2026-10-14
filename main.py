@@ -10,12 +10,13 @@ from models.user import UsersResponse , UsersRequest
 from models.url import URLRequest , URLResponse  , DashboardResponse , URLDetailsResponse , AnalyticsResponse , ClickStatsResponse
 from routes.user import create_admin , create_user , fetch_all_user , delete_user ,login_with_token ,logout_route
 from routes.url import get_url_link , get_all_url , get_url_stats 
-from routes.url import create_url , delete_url , get_user_urls , get_user_dashboard , get_admin_dashboard
-from routes.url import get_url_clicks_details
+from routes.url import create_url , delete_url , get_user_dashboard , get_admin_dashboard
+from routes.url import get_urls_clicks_details , get_user_urls 
 from operations.user import get_current_user
 from observers.obs_context import lifespan
 from dependencies.context import admin_context , current_user_context , new_user_context
 import logging
+from datetime import date
 from middlewares.central_middleware import unified_logging_and_exception_middleware
 
 logging.basicConfig(
@@ -166,16 +167,18 @@ def fetch_all_url(
 
 #************************************************************
 
-@app.get("/url/click_stats"
+@app.get("/urls/click_stats"
 , response_model = ClickStatsResponse
 
 )
 def fetch_url_clicks(
+    start_date : date | None = None,
+    end_date : date | None = None, 
     context = Depends(current_user_context)
 ):
     try:
-        url_click_stats = get_url_clicks_details(context["db"] , context["current_user"])
-        return url_click_stats 
+        urls_click_stats = get_urls_clicks_details(context["db"] , context["current_user"], start_date , end_date)
+        return urls_click_stats 
 
     except HTTPException:
         raise
@@ -268,10 +271,12 @@ def fetch_user_dashboard(
 )
 def get_url_stats_details(
     url_id : int,
+    start_date : date | None = None,
+    end_date : date | None = None, 
     context = Depends(current_user_context)
 ):
     try:
-        stats = get_url_stats(context["db"] , url_id , context["current_user"])
+        stats = get_url_stats(context["db"] , url_id , context["current_user"] , start_date , end_date)
         return stats
 
     except HTTPException:

@@ -1,5 +1,5 @@
 import validators
-from datetime import datetime , date
+from datetime import datetime , date , time , timedelta
 from sqlalchemy import desc , func
 from sqlalchemy.orm import Session
 from fastapi import BackgroundTasks , Request
@@ -13,6 +13,7 @@ import logging
 from sqlalchemy.exc import IntegrityError
 from dotenv import load_dotenv
 import os
+from urllib.parse import urlparse
 from observers.subject import stats_obs
 from builders.builder import StatsBuilderClass
 
@@ -67,6 +68,12 @@ def get_url_link(
         raise HTTPException(status_code=404,detail=f"Invalid Link , can't redirect to URL")
 
     referer = request.headers.get("referer") or "null"
+    if referer : 
+        referer_domain = urlparse(referer).hostname or "Unknown"
+    else:
+        referer = "Direct"
+        referer_domain = "Direct"
+
     date_time = datetime.now()
 
     if referer is None: 
@@ -76,7 +83,8 @@ def get_url_link(
         url_id = exist_url.url_id, 
         date_time = date_time , 
         referer =  referer , 
-        client_ip =  client_ip
+        referer_domain = referer_domain,
+        client_ip = client_ip
         )
     # background_tasks.add_task(record_click_metrics, exist_url.url_id, date_time , referer , client_ip)
     # order_id=new_order.id, user_email=user_email, total_amount=total_amount
@@ -106,29 +114,74 @@ def get_user_urls(
     
     return data.urls
     
-def get_url_clicks_details(
-    db : Session,
-    current_user : Users):
+# def get_url_clicks_details(
+#     db : Session,
+#     current_user : Users):
 
-    owner_id = current_user.userid
+#     owner_id = current_user.userid
 
-    if owner_id is None:
-        raise HTTPException(status_code = 404 , detail = "No details found")
+#     if owner_id is None:
+#         raise HTTPException(status_code = 404 , detail = "No details found")
     
-    builder = StatsBuilderClass()
-    data = (
-        builder
-        .add_daily_clicks(db = db , owner_id = owner_id)
-        .add_logs(db = db , owner_id = owner_id)
-        .build()
+#     builder = StatsBuilderClass()
+#     data = (
+#         builder
+#         .add_daily_clicks(db = db , owner_id = owner_id)
+#         .add_logs(db = db , owner_id = owner_id)
+#         .build()
+#     )
+#     # data = db.query(URL).filter(URL.owner_id == current_user.userid).order_by((URL.url_id)).all()
+
+#     if not data:
+#         raise HTTPException(status_code = 404 , detail = "User don't have created any URLs")
+    
+#     return data
+
+def get_urls_clicks_details(
+    db: Session,
+    current_user: Users,
+    start_date: date | None = None,
+    end_date: date | None = None
+):
+
+    if start_date and end_date and start_date > end_date:
+        raise HTTPException(
+            status_code=422,
+            detail="start_date cannot be after end_date"
+        )
+
+    url_ids = [
+        row[0]
+        for row in (
+            db.query(URL.url_id)
+            .filter(URL.owner_id == current_user.userid)
+            .all()
+        )
+    ]
+
+    analytics_data = build_click_analytics(
+        db,
+        url_ids,
+        start_date,
+        end_date
     )
-    # data = db.query(URL).filter(URL.owner_id == current_user.userid).order_by((URL.url_id)).all()
 
-    if not data:
-        raise HTTPException(status_code = 404 , detail = "User don't have created any URLs")
-    
-    return data
+    logs = (
+        get_filtered_click_logs(
+            db,
+            url_ids,
+            start_date,
+            end_date
+        )
+        .order_by(desc(ClickLog.clicked_at))
+        .all()
+    )
 
+    return {
+        "click_logs": logs,
+        "analytics": analytics_data["analytics"],
+        "referer_analytics": analytics_data["referer_analytics"]
+    }
 
 def get_user_dashboard(
     db : Session,
@@ -195,62 +248,207 @@ def get_all_url(
     logging.info(f"All URL details called : '{current_user.username}")
     return db.query(URL).all()
 
-def get_url_stats(
-    db : Session,
-    url_id : int,
-    current_user: Users):
+# def get_url_stats(
+#     db : Session,
+#     url_id : int,
+#     current_user: Users):
 
-    url_res = db.get(URL , url_id)
+#     url_res = db.get(URL , url_id)
+
+#     if url_res is None:
+#         raise HTTPException(status_code = 404 , detail = "!! URL ID not found !!")
+        
+#     if url_res.owner_id != current_user.userid and current_user.user_role != 'Admin':
+#         raise HTTPException(status_code = 403 , detail = "!! Access restricted !!")
+    
+#     logs = (db.query(ClickLog).filter(ClickLog.url_id == url_id).order_by(desc(ClickLog.clicked_at)).all())
+
+#     daily_clicks = (
+#         db.query(
+#             ClickLog.url_id, 
+#             func.date(ClickLog.clicked_at).label("date"),
+#             func.count(ClickLog.log_id).label("clicks")
+#         )
+#         .filter(
+#             ClickLog.url_id == url_id
+#         )
+#         .group_by(
+#             ClickLog.url_id,
+#             func.date(ClickLog.clicked_at)
+#         )
+#         .order_by(
+#             desc(func.date(ClickLog.clicked_at))
+#         ) 
+#         .all()
+#     )
+#     analytics = [
+#         { 
+#             "url_id": row.url_id,
+#             "date": row.date,
+#             "clicks_per_day": row.clicks 
+#         }
+#         for row in daily_clicks
+#     ]
+   
+#     return{
+#         "url":url_res , "click_logs":logs , "analytics": analytics
+#     }
+def get_url_stats(
+    db: Session,
+    url_id: int,
+    current_user: Users,
+    start_date: date | None = None,
+    end_date: date | None = None
+):
+
+    url_res = db.get(URL, url_id)
 
     if url_res is None:
-        raise HTTPException(status_code = 404 , detail = "!! URL ID not found !!")
-        
-    if url_res.owner_id != current_user.userid and current_user.user_role != 'Admin':
-        raise HTTPException(status_code = 403 , detail = "!! Access restricted !!")
- 
-    # builder = StatsBuilderClass()
- 
-    # data = (
-    #     builder
-    #     .add_urls(db = db , owner_id = url_id) 
-    #     .add_logs(db = db , owner_id = url_id)
-    #     .add_daily_clicks(db = db , owner_id = url_id)
-    #     .build()
-    # )
+        raise HTTPException(
+            status_code=404,
+            detail="URL ID not found"
+        )
 
-    # return data
-    logs = (db.query(ClickLog).filter(ClickLog.url_id == url_id).order_by(desc(ClickLog.clicked_at)).all())
+    if url_res.owner_id != current_user.userid and current_user.user_role != "Admin":
+        raise HTTPException(
+            status_code=403,
+            detail="Access restricted"
+        )
 
-    daily_clicks = (
-        db.query(
-            ClickLog.url_id, 
-            func.date(ClickLog.clicked_at).label("date"),
-            func.count(ClickLog.log_id).label("clicks")
+    analytics_data = build_click_analytics(
+        db,[url_id],start_date,end_date
+    )
+
+    logs = (
+        get_filtered_click_logs(
+            db,
+            [url_id],
+            start_date,
+            end_date
         )
-        .filter(
-            ClickLog.url_id == url_id
-        )
-        .group_by(
-            ClickLog.url_id,
-            func.date(ClickLog.clicked_at)
-        )
-        .order_by(
-            desc(func.date(ClickLog.clicked_at))
-        ) 
+        .order_by(desc(ClickLog.clicked_at))
         .all()
     )
-    analytics = [
-        { 
+
+    return {
+        "url": url_res,
+        "click_logs": logs,
+        "analytics": analytics_data["analytics"],
+        "referer_analytics": analytics_data["referer_analytics"]
+    }
+def get_filtered_click_logs(
+    db: Session,
+    url_ids: list[int],
+    start_date: date | None = None ,
+    end_date: date | None = None
+):
+
+    if start_date and end_date and start_date > end_date:
+        raise HTTPException(
+            status_code=422,
+            detail="start_date cannot be after end_date"
+        )
+
+    if not url_ids:
+        return db.query(ClickLog).filter(False)
+
+    query = db.query(ClickLog).filter(ClickLog.url_id.in_(url_ids))
+
+    if start_date:
+        query = query.filter(
+            ClickLog.clicked_at >= datetime.combine(start_date,time.min)
+        )
+
+    if end_date:
+        query = query.filter(
+            ClickLog.clicked_at < datetime.combine(end_date + timedelta(days=1),time.min)
+        )
+
+    return query
+
+def build_click_analytics(
+    db: Session,
+    url_ids: list[int],
+    start_date: date | None = None,
+    end_date: date | None = None
+):
+
+    if start_date and end_date and start_date > end_date:
+        raise HTTPException(
+            status_code=422,
+            detail="start_date cannot be after end_date"
+        )
+
+    if not url_ids:
+        return {
+            "analytics": [],
+            "referer_analytics": []
+        }
+
+    filtered_logs = get_filtered_click_logs(
+        db=db,
+        url_ids=url_ids,
+        start_date=start_date,
+        end_date=end_date
+    ).subquery()
+
+    # Daily click totals.
+    daily_rows = (
+        db.query(
+            filtered_logs.c.url_id,
+            func.date(filtered_logs.c.clicked_at).label("date"),
+            func.count(filtered_logs.c.log_id).label("clicks")
+        )
+        .group_by(
+            filtered_logs.c.url_id,
+            func.date(filtered_logs.c.clicked_at)
+        )
+        .order_by(
+            desc(func.date(filtered_logs.c.clicked_at))
+        )
+        .all()
+    )
+
+    daily_analytics = [
+        {
             "url_id": row.url_id,
             "date": row.date,
-            "clicks_per_day": row.clicks 
+            "clicks_per_day": row.clicks
         }
-        for row in daily_clicks
+        for row in daily_rows
     ]
-   
-    return{
-        "url":url_res , "click_logs":logs , "analytics": analytics
+
+    # Referrer-domain totals.
+    domain = func.coalesce(
+        filtered_logs.c.referer_domain,
+        "Unknown"
+    ).label("referer_domain")
+
+    referer_rows = (
+        db.query(
+            domain,
+            func.count(filtered_logs.c.log_id).label("clicks")
+        )
+        .group_by(domain)
+        .order_by(
+            desc(func.count(filtered_logs.c.log_id))
+        )
+        .all()
+    )
+
+    referer_analytics = [
+        {
+            "referer_domain": row.referer_domain,
+            "clicks": row.clicks
+        }
+        for row in referer_rows
+    ]
+
+    return {
+        "analytics": daily_analytics,
+        "referer_analytics": referer_analytics
     }
+
 
 def delete_url(
     db : Session,

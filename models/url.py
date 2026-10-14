@@ -36,13 +36,23 @@ class DashboardResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+class ReferAnalyticsResponse(BaseModel):
+    referer_domain : str
+    clicks : int
+
+    model_config = ConfigDict(from_attributes=True)
+
 class URLDetailsResponse(BaseModel):
     url : URLResponse | None
     click_logs : list[ClickLogResponse] | None
     analytics : list[AnalyticsResponse]| None
+    referer_analytics : list[ReferAnalyticsResponse] | None
 
     model_config = ConfigDict(from_attributes=True)
 
 class ClickStatsResponse(BaseModel):
     click_logs : list[ClickLogResponse]
     analytics : list[AnalyticsResponse]
+    referer_analytics : list[ReferAnalyticsResponse] | None
+
+    model_config = ConfigDict(from_attributes=True)
