@@ -31,6 +31,7 @@ class ClickLog(Base):
     url_id : Mapped[int] = mapped_column(Integer , ForeignKey("URL_table.url_id") , nullable=False)    
     clicked_at : Mapped[datetime] = mapped_column(DateTime , nullable= False)
     referer : Mapped[str] = mapped_column(String(255))
+    referer_domain : Mapped[str] = mapped_column(String(255))
     ip : Mapped[str] = mapped_column(String(255))
     url_obj = relationship("URL" , back_populates="logs")
 
