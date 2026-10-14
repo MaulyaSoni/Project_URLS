@@ -12,8 +12,8 @@ class ObserverSubject:
     def remove(self , observer : StatsObserver) -> None:
         self.observers.remove(observer)
     
-    def notify_observers(self , url_id , date_time , referer , client_ip) -> None:
+    def notify_observers(self , url_id , date_time , referer , referer_domain  , client_ip) -> None:
         for observer in self.observers:
-            observer.update(url_id ,  date_time , referer , client_ip)
+            observer.update(url_id ,  date_time , referer , referer_domain, client_ip)
 
 stats_obs = ObserverSubject()
