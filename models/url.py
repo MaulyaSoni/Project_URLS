@@ -36,6 +36,19 @@ class DashboardResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+class PaginationMetadataReposne(BaseModel):
+    page : int
+    limit : int 
+    total : int
+    total_pages : int 
+    
+    model_config = ConfigDict(from_attributes = True)
+
+class URLPageResponse(PaginationMetadataReposne):
+    items: list[URLResponse]
+
+    model_config = ConfigDict(from_attributes = True)
+
 class ReferAnalyticsResponse(BaseModel):
     referer_domain : str
     clicks : int
@@ -47,6 +60,11 @@ class URLDetailsResponse(BaseModel):
     click_logs : list[ClickLogResponse] | None
     analytics : list[AnalyticsResponse]| None
     referer_analytics : list[ReferAnalyticsResponse] | None
+    page : int
+    limit : int 
+    total : int
+    total_pages : int 
+    
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -54,5 +72,9 @@ class ClickStatsResponse(BaseModel):
     click_logs : list[ClickLogResponse]
     analytics : list[AnalyticsResponse]
     referer_analytics : list[ReferAnalyticsResponse] | None
-
+    page : int
+    limit : int 
+    total : int
+    total_pages : int 
+    
     model_config = ConfigDict(from_attributes=True)

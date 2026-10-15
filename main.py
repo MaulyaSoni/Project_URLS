@@ -2,13 +2,13 @@ import logging
 from datetime import date
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
-from fastapi import FastAPI , Request, Depends , BackgroundTasks
+from fastapi import FastAPI , Request, Depends , BackgroundTasks , Query
 from fastapi.security import OAuth2PasswordRequestForm , OAuth2PasswordBearer
 from fastapi.exceptions import HTTPException
 from database.db import get_db , SessionLocal
 from database.schema import Users
 from models.user import UsersResponse , UsersRequest
-from models.url import URLRequest , URLResponse  , DashboardResponse , URLDetailsResponse , AnalyticsResponse , ClickStatsResponse
+from models.url import URLRequest , URLResponse  , DashboardResponse , URLPageResponse , URLDetailsResponse , AnalyticsResponse , ClickStatsResponse , PaginationMetadataReposne
 from models.message import MessageResponse
 from routes.user import create_admin , create_user , fetch_all_user , delete_user ,login_with_token ,logout_route
 from routes.url import get_url_link , get_all_url , get_url_stats 
@@ -145,35 +145,83 @@ def create_new_url(
         raise HTTPException(status_code=500 ,detail=f"Internal Server Error")     
 
 
-@app.get("/urls" , response_model = list[URLResponse])
+@app.get("/urls" , response_model = URLPageResponse)
 def fetch_all_url(
-    context = Depends(admin_context)
+    page: int = Query(1, ge=1),
+    limit: int = Query(10, ge=1, le=100),
+    context=Depends(admin_context)
 ):
     try:
-        urls = get_all_url(context["db"],context["current_user"])
-        return urls
+        return get_all_url(
+            context["db"],
+            context["current_user"],
+            page,
+            limit
+        )
+    except HTTPException:
+        raise
+    except Exception:
+        logging.exception("Failed to fetch URLs")
+        raise HTTPException(
+            status_code=500,
+            detail="Internal Server Error"
+        )
 
-    except Exception as e:
-        logging.exception(e)
-        raise HTTPException(status_code=500 ,detail="Internal Server Error")
+# def fetch_all_url(
+#     context = Depends(admin_context),
+#     page: int = Query(1, ge=1, description="Page number"),
+#     page_size: int = Query(10, ge=1, le=100, description="Items per page")
+# ):
+#     try:
+#         urls = get_all_url(context["db"],context["current_user"] , page=page , page_size = page_size)
+#         return urls
+
+#     except Exception as e:
+#         logging.exception(e)
+#         raise HTTPException(status_code=500 ,detail="Internal Server Error")
 
 
 @app.get("/urls/click_stats", response_model = ClickStatsResponse)
 def fetch_url_clicks(
-    start_date : date | None = None,
-    end_date : date | None = None, 
-    context = Depends(current_user_context)
+    start_date: date | None = None,
+    end_date: date | None = None,
+    page: int = Query(1, ge=1),
+    limit: int = Query(10, ge=1, le=100),
+    context=Depends(current_user_context)
 ):
     try:
-        urls_click_stats = get_urls_clicks_details(context["db"] , context["current_user"], start_date , end_date)
-        return urls_click_stats 
-
+        return get_urls_clicks_details(
+            context["db"],
+            context["current_user"],
+            start_date,
+            end_date,
+            page,
+            limit
+        )
     except HTTPException:
         raise
+    except Exception:
+        logging.exception("Failed to fetch click statistics")
+        raise HTTPException(
+            status_code=500,
+            detail="Internal Server Error"
+        )
 
-    except Exception as e:
-        logging.exception(e)
-        raise HTTPException(status_code=500 , detail="Internal Server Error")
+# def fetch_url_clicks(
+#     start_date : date | None = None,
+#     end_date : date | None = None, 
+#     context = Depends(current_user_context)
+# ):
+#     try:
+#         urls_click_stats = get_urls_clicks_details(context["db"] , context["current_user"], start_date , end_date)
+#         return urls_click_stats 
+
+#     except HTTPException:
+#         raise
+
+#     except Exception as e:
+#         logging.exception(e)
+#         raise HTTPException(status_code=500 , detail="Internal Server Error")
 
 
 @app.get("/url/{short_link}")
@@ -201,21 +249,40 @@ def fetch_url_from_short_link(
         logging.exception("Failed to process the short_link redirection",e)
         raise HTTPException(status_code=500 , detail="Internal Server Error")
 
-@app.get("/my/urls", response_model= list[URLResponse])
+# def fetch_user_urls(
+#     context = Depends(current_user_context)
+# ):
+#     try:
+#         my_urls = get_user_urls(context["db"] , context["current_user"])
+#         return my_urls
+
+#     except HTTPException:
+#         raise
+
+#     except Exception as e:
+#         logging.exception(e)
+#         raise HTTPException(status_code=500 , detail="Internal Server Error")
+@app.get("/my/urls", response_model= URLPageResponse)
 def fetch_user_urls(
-    context = Depends(current_user_context)
+    page: int = Query(1, ge=1),
+    limit: int = Query(10, ge=1, le=100),
+    context=Depends(current_user_context)
 ):
     try:
-        my_urls = get_user_urls(context["db"] , context["current_user"])
-        return my_urls
-
+        return get_user_urls(
+            context["db"],
+            context["current_user"],
+            page,
+            limit
+        )
     except HTTPException:
         raise
-
-    except Exception as e:
-        logging.exception(e)
-        raise HTTPException(status_code=500 , detail="Internal Server Error")
-
+    except Exception:
+        logging.exception("Failed to fetch user URLs")
+        raise HTTPException(
+            status_code=500,
+            detail="Internal Server Error"
+        )
 
 @app.get("/admin/dashboard" , response_model = DashboardResponse)
 def fetch_admin_dashboard(
@@ -250,21 +317,47 @@ def fetch_user_dashboard(
 
 @app.get("/url/stats/{url_id}", response_model = URLDetailsResponse)
 def get_url_stats_details(
-    url_id : int,
-    start_date : date | None = None,
-    end_date : date | None = None, 
-    context = Depends(current_user_context)
+    url_id: int,
+    start_date: date | None = None,
+    end_date: date | None = None,
+    page: int = Query(1, ge=1),
+    limit: int = Query(10, ge=1, le=100),
+    context=Depends(current_user_context)
 ):
     try:
-        stats = get_url_stats(context["db"] , url_id , context["current_user"] , start_date , end_date)
-        return stats
-
+        return get_url_stats(
+            context["db"],
+            url_id,
+            context["current_user"],
+            start_date,
+            end_date,
+            page,
+            limit
+        )
     except HTTPException:
         raise
+    except Exception:
+        logging.exception("Failed to fetch URL statistics")
+        raise HTTPException(
+            status_code=500,
+            detail="Internal Server Error"
+        )
+# def get_url_stats_details(
+#     url_id : int,
+#     start_date : date | None = None,
+#     end_date : date | None = None, 
+#     context = Depends(current_user_context)
+# ):
+#     try:
+#         stats = get_url_stats(context["db"] , url_id , context["current_user"] , start_date , end_date)
+#         return stats
 
-    except Exception as e:
-        logging.exception(e)
-        raise HTTPException(status_code=500 , detail="Internal Server Error")
+#     except HTTPException:
+#         raise
+
+#     except Exception as e:
+#         logging.exception(e)
+#         raise HTTPException(status_code=500 , detail="Internal Server Error")
 
 @app.get("/users/me" , response_model = UsersResponse)
 def get_my_info(
