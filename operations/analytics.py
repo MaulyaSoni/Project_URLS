@@ -81,13 +81,13 @@ def build_click_analytics(
     referer_rows = (
         logs_query
         .with_entities(
+            #coalesce -> first non-null value from a list of arguments 
             func.coalesce(ClickLog.referer_domain,"Direct").label("referer_domain"),
             func.count(ClickLog.log_id).label("clicks")
-        )
+        )                                                                                                                             
         .group_by(
             func.coalesce(
-                ClickLog.referer_domain,
-                "Direct"
+                ClickLog.referer_domain,"Direct"
             )
         )
         .order_by(
