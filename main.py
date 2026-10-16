@@ -220,10 +220,12 @@ def fetch_user_urls(
 
 @app.get("/admin/dashboard" , response_model = DashboardResponse)
 def fetch_admin_dashboard(
+    page : int | None = None,
+    limit : int | None = None,
     context = Depends(admin_context)
 ):
     try:
-        dashboard = get_admin_dashboard(context["db"] , context["current_user"])
+        dashboard = get_admin_dashboard(context["db"] , context["current_user"] , page , limit)
         return dashboard
 
     except HTTPException:
@@ -235,10 +237,12 @@ def fetch_admin_dashboard(
 
 @app.get("/my/dashboard" , response_model = DashboardResponse)
 def fetch_user_dashboard(
+    page : int | None = None,
+    limit : int | None = None,
     context = Depends(current_user_context)
 ):
     try:
-        dashboard = get_user_dashboard(context["db"] , context["current_user"])
+        dashboard = get_user_dashboard(context["db"] , context["current_user"], page , limit)
         return dashboard
 
     except HTTPException:

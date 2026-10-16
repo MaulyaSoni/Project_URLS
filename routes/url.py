@@ -200,7 +200,10 @@ def get_urls_clicks_details(
 
 def get_user_dashboard(
     db : Session,
-    current_user : Users):
+    current_user : Users,
+    page: int | None = None,
+    limit: int | None = None
+    ):
     owner_id = current_user.userid
 
     if owner_id is None:
@@ -210,8 +213,8 @@ def get_user_dashboard(
 
     data = (
         builder
-        .add_urls(db = db , owner_id = owner_id) 
-        .add_logs(db = db , owner_id = owner_id)
+        .add_urls(db = db , owner_id = owner_id , page=page , limit=limit) 
+        .add_logs(db = db , owner_id = owner_id, page=page , limit=limit)
         .add_daily_clicks(db = db , owner_id = owner_id)
         .build()
     )
@@ -220,14 +223,29 @@ def get_user_dashboard(
 
 def get_admin_dashboard(
     db : Session ,
-    current_user : Users):
+    current_user : Users,
+    page: int | None = None,
+    limit: int | None = None
+    ):
     owner_id = current_user.userid
 
     if owner_id is None:
         raise HTTPException(status_code = 404 , detail = "No details found")
     
-    urls = (db.query(URL).order_by(desc(URL.url_id)).all())
-    logs = (db.query(ClickLog).order_by(desc(ClickLog.clicked_at)).all()) 
+    urls = (
+        db.query(URL)
+        .order_by(desc(URL.url_id))
+        .offset((page - 1) * limit)
+        .limit(limit)
+        .all())
+
+    logs = (
+        db.query(ClickLog)
+        .order_by(desc(ClickLog.clicked_at))
+        .offset((page - 1) * limit)
+        .limit(limit)
+        .all()
+    ) 
 
     daily_clicks = (
         db.query(
@@ -242,6 +260,8 @@ def get_admin_dashboard(
         .order_by(
             desc(func.date(ClickLog.clicked_at))
         )
+        .offset((page - 1) * limit)
+        .limit(limit)
         .all()
     )
     daily_clicks_response = [ 
@@ -287,7 +307,7 @@ def get_all_url(
     page: int = 1,
     limit: int = 10
     ):
-    
+
     data = (
         StatsBuilderClass()
         .add_urls(
