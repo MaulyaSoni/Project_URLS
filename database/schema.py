@@ -17,9 +17,9 @@ class URL(Base):
     __tablename__ = 'URL_table'
     
     url_id: Mapped[int] = mapped_column(Integer , primary_key=True , autoincrement=True)
-    url : Mapped[str] = mapped_column(String(500))
-    owner_id : Mapped[int] = mapped_column(Integer)
-    short_link: Mapped[str] = mapped_column(String(200) , unique = True)
+    url : Mapped[str] = mapped_column(String(500), nullable = False)
+    owner_id : Mapped[int] = mapped_column(Integer , ForeignKey("User_table.userid"), nullable = False)
+    short_link: Mapped[str] = mapped_column(String(200) , unique = True  , nullable = False)
     total_clicks : Mapped[int] = mapped_column(Integer , default=0)
 
     logs = relationship("ClickLog" , back_populates = "url_obj")
@@ -31,6 +31,7 @@ class ClickLog(Base):
     url_id : Mapped[int] = mapped_column(Integer , ForeignKey("URL_table.url_id") , nullable=False)    
     clicked_at : Mapped[datetime] = mapped_column(DateTime , nullable= False)
     referer : Mapped[str] = mapped_column(String(255))
+    referer_domain : Mapped[str] = mapped_column(String(255))
     ip : Mapped[str] = mapped_column(String(255))
     url_obj = relationship("URL" , back_populates="logs")
 
@@ -39,4 +40,4 @@ class RevokedToken(Base):
 
     tokenid : Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     token : Mapped[str] = mapped_column(String(512), unique=True, index=True, nullable=False)
-    created_at : Mapped[date] = mapped_column(DateTime, default=datetime.now())
+    created_at : Mapped[date] = mapped_column(DateTime, default=datetime.now)
