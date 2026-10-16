@@ -26,8 +26,7 @@ def apply_click_date_filters(
 ):
     if start_date and end_date and start_date > end_date:
         raise HTTPException(
-            status_code=400,
-            detail="start_date cannot be after end_date"
+            status_code=400,detail="start_date cannot be after end_date"
         )
 
     if start_date:

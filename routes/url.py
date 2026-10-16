@@ -103,35 +103,60 @@ def get_url_link(
 
     return RedirectResponse(url = exist_url.url , status_code = 303)
 
+# def get_user_urls(
+#     db: Session,
+#     current_user: Users,
+#     page: int = 1,
+#     limit: int = 10
+# ):
+#     query = (
+#         db.query(URL)
+#         .filter(URL.owner_id == current_user.userid)
+#         .order_by(desc(URL.url_id))
+#     )
+
+#     total = query.count()
+
+#     urls = (
+#         query
+#         .offset((page - 1) * limit)
+#         .limit(limit)
+#         .all()
+#     )
+
+#     return {
+#         "items": urls,
+#         "page": page,
+#         "limit": limit,
+#         "total": total,
+#         "total_pages": ceil(total / limit) if total else 0
+#     }
 def get_user_urls(
     db: Session,
     current_user: Users,
     page: int = 1,
     limit: int = 10
-):
-    query = (
-        db.query(URL)
-        .filter(URL.owner_id == current_user.userid)
-        .order_by(desc(URL.url_id))
-    )
+    ):
 
-    total = query.count()
+    if current_user.userid is None:
+        raise HTTPException(status_code=404,detail="No details found")
 
-    urls = (
-        query
-        .offset((page - 1) * limit)
-        .limit(limit)
-        .all()
+    data = (
+        StatsBuilderClass()
+        .add_urls(
+            db=db,
+            owner_id=current_user.userid,
+            page=page,
+            limit=limit
+        )
+        .build()
     )
 
     return {
-        "items": urls,
-        "page": page,
-        "limit": limit,
-        "total": total,
-        "total_pages": ceil(total / limit) if total else 0
+        "items": data.urls,
+        **data.url_pagination
     }
-  
+
 def get_urls_clicks_details(
     db: Session,
     current_user: Users,
@@ -232,29 +257,51 @@ def get_admin_dashboard(
         "urls":urls , "click_logs" : logs , "analytics":daily_clicks_response    
     }
  
+# def get_all_url(
+#     db: Session,
+#     current_user: Users,
+#     page: int = 1,
+#     limit: int = 10
+# ):
+#     query = db.query(URL).order_by(desc(URL.url_id))
+
+#     total = query.count()
+
+#     urls = (
+#         query
+#         .offset((page - 1) * limit)
+#         .limit(limit)
+#         .all()
+#     )
+
+#     return {
+#         "items": urls,
+#         "page": page,
+#         "limit": limit,
+#         "total": total,
+#         "total_pages": ceil(total / limit) if total else 0
+#     }
 def get_all_url(
     db: Session,
     current_user: Users,
     page: int = 1,
     limit: int = 10
-):
-    query = db.query(URL).order_by(desc(URL.url_id))
-
-    total = query.count()
-
-    urls = (
-        query
-        .offset((page - 1) * limit)
-        .limit(limit)
-        .all()
+    ):
+    
+    data = (
+        StatsBuilderClass()
+        .add_urls(
+            db=db,
+            page=page,
+            limit=limit,
+            all_urls=True
+        )
+    .build()
     )
 
     return {
-        "items": urls,
-        "page": page,
-        "limit": limit,
-        "total": total,
-        "total_pages": ceil(total / limit) if total else 0
+        "items": data.urls,
+        **data.url_pagination
     }
 
 def get_url_stats(
