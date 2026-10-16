@@ -225,7 +225,10 @@ def fetch_admin_dashboard(
     context = Depends(admin_context)
 ):
     try:
-        dashboard = get_admin_dashboard(context["db"] , context["current_user"] , page , limit)
+        if page and limit :
+            dashboard = get_admin_dashboard(context["db"] , context["current_user"] , page , limit)
+        else:
+            dashboard = get_admin_dashboard(context["db"] , context["current_user"])        
         return dashboard
 
     except HTTPException:
@@ -242,7 +245,10 @@ def fetch_user_dashboard(
     context = Depends(current_user_context)
 ):
     try:
-        dashboard = get_user_dashboard(context["db"] , context["current_user"], page , limit)
+        if page and limit :
+            dashboard = get_user_dashboard(context["db"] , context["current_user"], page , limit)
+        else:
+            dashboard = get_user_dashboard(context["db"] , context["current_user"] )
         return dashboard
 
     except HTTPException:

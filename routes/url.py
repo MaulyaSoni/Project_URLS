@@ -201,8 +201,8 @@ def get_urls_clicks_details(
 def get_user_dashboard(
     db : Session,
     current_user : Users,
-    page: int | None = None,
-    limit: int | None = None
+    page: int = 1,
+    limit: int =10
     ):
     owner_id = current_user.userid
 
@@ -224,8 +224,8 @@ def get_user_dashboard(
 def get_admin_dashboard(
     db : Session ,
     current_user : Users,
-    page: int | None = None,
-    limit: int | None = None
+    page: int = 1,
+    limit: int =10
     ):
     owner_id = current_user.userid
 
