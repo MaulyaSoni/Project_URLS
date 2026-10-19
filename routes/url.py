@@ -8,7 +8,7 @@ from urllib.parse import urlparse
 from sqlalchemy import desc , func
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
-from fastapi import BackgroundTasks , Request
+from fastapi import BackgroundTasks , Request  , status
 from fastapi.exceptions import HTTPException
 from fastapi.responses import RedirectResponse
 from database.schema import Users , URL , ClickLog 
@@ -25,6 +25,8 @@ def create_url(
     url_req : URLRequest,
     current_user : Users
     ):
+    
+    BLOCKED_HOSTS_AND_PORTS = os.getenv("BLOCKED_HOSTS_AND_PORTS")
 
     if not validators.url(url_req.url):
         raise HTTPException(status_code = 400 ,detail="Your provided URL is not valid")
@@ -38,6 +40,30 @@ def create_url(
 
     base_url = os.getenv("BASE_URL")
     base_domain = str(request.base_url).rstrip("/")
+
+    try:
+        parsed_url = urlparse(url_req.url)
+        
+        # netloc (e.g., "127.0.0.1:8000")
+        netloc = parsed_url.netloc.lower().strip()
+        # hostname (e.g., "127.0.0.1")
+        hostname = parsed_url.hostname.lower().strip() if parsed_url.hostname else ""
+        
+        if not netloc:
+            raise ValueError()
+
+        if netloc in BLOCKED_HOSTS_AND_PORTS or hostname in BLOCKED_HOSTS_AND_PORTS:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot shorten a URL belonging to this service / domain ."
+            )
+      
+        
+    except (ValueError, AttributeError):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="The provided URL is malformed or invalid."
+        )
 
     if (existing_url and existing_url.owner_id == current_user.userid):
         logging.warning(f"Re-perform operation for same url : '{current_user.userid}'")
