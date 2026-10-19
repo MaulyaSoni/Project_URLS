@@ -4,7 +4,7 @@ from math import ceil
 import validators
 from dotenv import load_dotenv
 from datetime import datetime , date , time , timedelta
-from urllib.parse import urlparse
+from urllib.parse import urlparse , urlunparse
 from sqlalchemy import desc , func
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
@@ -28,42 +28,60 @@ def create_url(
     
     BLOCKED_HOSTS_AND_PORTS = os.getenv("BLOCKED_HOSTS_AND_PORTS")
 
-    if not validators.url(url_req.url):
+   
+    clean_url = url_req.url.strip()
+    
+    #URL NORMALIZATION 
+    if not clean_url.startswith(("http://", "https://")):
+        clean_url = "https://" + clean_url
+        
+    try:
+        parsed_url = urlparse(clean_url)
+        
+        # Lowercase the domain parts (netloc/hostname are case-insensitive)
+        netloc = parsed_url.netloc.lower().strip()
+        hostname = parsed_url.hostname.lower().strip() if parsed_url.hostname else ""
+        
+        if not netloc:
+            raise ValueError()
+            
+        # Reconstruct the URL with the normalized lowercased domain
+        normalized_url = urlunparse((
+            parsed_url.scheme,    
+            netloc,              
+            parsed_url.path,    
+            parsed_url.params,   
+            parsed_url.query,     
+            parsed_url.fragment   
+        ))
+
+        #URL VALIDATION AND LOOP PREVENTION 
+        
+        if netloc in BLOCKED_HOSTS_AND_PORTS or hostname in BLOCKED_HOSTS_AND_PORTS:
+            raise HTTPException(
+                status_code=400,
+                detail="Cannot shorten a URL belonging to this service."
+            )
+            
+        
+    except (ValueError, AttributeError):
+        raise HTTPException(
+            status_code=422,
+            detail="The provided URL is malformed or invalid."
+        )
+
+    if not validators.url(normalized_url):
         raise HTTPException(status_code = 400 ,detail="Your provided URL is not valid")
 
     existing_url = (
         db.query(URL)
-        .filter(URL.url == url_req.url)
+        .filter(URL.url == normalized_url)
         .order_by(desc(URL.url_id))
         .first()
     )
 
     base_url = os.getenv("BASE_URL")
     base_domain = str(request.base_url).rstrip("/")
-
-    try:
-        parsed_url = urlparse(url_req.url)
-        
-        # netloc (e.g., "127.0.0.1:8000")
-        netloc = parsed_url.netloc.lower().strip()
-        # hostname (e.g., "127.0.0.1")
-        hostname = parsed_url.hostname.lower().strip() if parsed_url.hostname else ""
-        
-        if not netloc:
-            raise ValueError()
-
-        if netloc in BLOCKED_HOSTS_AND_PORTS or hostname in BLOCKED_HOSTS_AND_PORTS:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Cannot shorten a URL belonging to this service / domain ."
-            )
-      
-        
-    except (ValueError, AttributeError):
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="The provided URL is malformed or invalid."
-        )
 
     if (existing_url and existing_url.owner_id == current_user.userid):
         logging.warning(f"Re-perform operation for same url : '{current_user.userid}'")
@@ -81,7 +99,7 @@ def create_url(
     full_short_link = f"{base_domain}/url/{short_link}"
 
     new_url = URL(
-        url = url_req.url,
+        url = normalized_url,
         short_link = short_link,
         owner_id = current_user.userid
     )
