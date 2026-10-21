@@ -275,7 +275,7 @@ def get_user_dashboard(
     db : Session,
     current_user : Users,
     page: int = 1,
-    limit: int =10
+    limit: int = 10
     ):
     owner_id = current_user.userid
 
@@ -475,9 +475,11 @@ def delete_url(
         db.rollback()
         logging.exception(e)
         raise 
+    try:
+        url.cache.delete(f"url :{short_link}")
 
-    url.cache.delete(f"url :{short_link}")
-
+    except Exception:
+        logging.exception("Cache Invalidation failed")
     logging.info(f"ID {url_id} , url deleted by : '{current_user.username}'")
 
     return {
