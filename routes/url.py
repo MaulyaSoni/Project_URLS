@@ -108,9 +108,16 @@ def create_url(
 
     db.add(new_url)
     db.commit()
-    logging.info(f"New short link generated : '{current_user.userid}'")
 
-    MemoryCacheClass.set()
+    url.cache.set(
+        key=f"url : {new_url.short}",
+        value={
+            "url_id" : new_url.url_id,
+            "url" : new_url.url
+        },
+        ttl= URL_CACHE_TTL
+    )
+    logging.info(f"New short link generated : '{current_user.userid}'")
     return new_url , full_short_link
 
 
@@ -469,10 +476,13 @@ def delete_url(
         logging.exception(e)
         raise 
 
+    url.cache.delete(f"url :{short_link}")
+
     logging.info(f"ID {url_id} , url deleted by : '{current_user.username}'")
+
     return {
         "message" : f"ID - {url_id} Deleted successfully"
-        }
+    }
 
 
 # def delete_all(
