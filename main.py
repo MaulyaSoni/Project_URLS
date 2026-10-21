@@ -144,24 +144,6 @@ def create_new_url(
         logging.error(e)
         raise HTTPException(status_code=500 ,detail="Internal Server Error")     
 
-
-@app.get("/urls" , response_model = URLPageResponse)
-def fetch_all_url(
-    page: int = Query(1, ge=1),
-    limit: int = Query(10, ge=1, le=100),
-    context=Depends(admin_context)
-):
-    try:
-        return get_all_url(context["db"],context["current_user"],page,limit)
-
-    except HTTPException:
-        raise
-
-    except Exception as e:
-        logging.exception("Failed to fetch URLs",e)
-        raise HTTPException(status_code=500,detail="Internal Server Error")
-
-
 @app.get("/urls/click_stats", response_model = ClickStatsResponse)
 def fetch_url_clicks(
     start_date: date | None = None,
@@ -180,7 +162,39 @@ def fetch_url_clicks(
         logging.exception("Failed to fetch click statistics", e)
         raise HTTPException(status_code=500,detail="Internal Server Error")
 
+@app.get("/urls" , response_model = URLPageResponse)
+def fetch_all_url(
+    page: int = Query(1, ge=1),
+    limit: int = Query(10, ge=1, le=100),
+    context=Depends(admin_context)
+):
+    try:
+        return get_all_url(context["db"],context["current_user"],page,limit)
 
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        logging.exception("Failed to fetch URLs",e)
+        raise HTTPException(status_code=500,detail="Internal Server Error")
+
+@app.get("/my/urls", response_model= URLPageResponse)
+def fetch_user_urls(
+    page: int = Query(1, ge=1),
+    limit: int = Query(10, ge=1, le=100),
+    context=Depends(current_user_context)
+):
+    try:
+        return get_user_urls(context["db"],context["current_user"],page,limit)
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        logging.exception("Failed to fetch user URLs",e)
+        raise HTTPException(status_code=500,detail="Internal Server Error")
+        
+        
 @app.get("/url/{short_link}")
 def fetch_url_from_short_link(
     short_link : str , 
@@ -201,22 +215,6 @@ def fetch_url_from_short_link(
         db.rollback()
         logging.exception("Failed to process the short_link redirection",e)
         raise HTTPException(status_code=500 , detail="Internal Server Error")
-
-@app.get("/my/urls", response_model= URLPageResponse)
-def fetch_user_urls(
-    page: int = Query(1, ge=1),
-    limit: int = Query(10, ge=1, le=100),
-    context=Depends(current_user_context)
-):
-    try:
-        return get_user_urls(context["db"],context["current_user"],page,limit)
-
-    except HTTPException:
-        raise
-
-    except Exception as e:
-        logging.exception("Failed to fetch user URLs",e)
-        raise HTTPException(status_code=500,detail="Internal Server Error")
 
 @app.get("/admin/dashboard" , response_model = DashboardResponse)
 def fetch_admin_dashboard(

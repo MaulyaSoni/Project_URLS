@@ -4,11 +4,11 @@ from math import ceil
 import validators
 from dotenv import load_dotenv
 from datetime import datetime , date , time , timedelta
-from urllib.parse import urlparse
+from urllib.parse import urlparse , urlunparse
 from sqlalchemy import desc , func
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
-from fastapi import BackgroundTasks , Request
+from fastapi import BackgroundTasks , Request  , status
 from fastapi.exceptions import HTTPException
 from fastapi.responses import RedirectResponse
 from database.schema import Users , URL , ClickLog 
@@ -25,13 +25,57 @@ def create_url(
     url_req : URLRequest,
     current_user : Users
     ):
+    
+    BLOCKED_HOSTS_AND_PORTS = os.getenv("BLOCKED_HOSTS_AND_PORTS")
 
-    if not validators.url(url_req.url):
+   
+    clean_url = url_req.url.strip()
+    
+    #URL NORMALIZATION 
+    if not clean_url.startswith(("http://", "https://")):
+        clean_url = "https://" + clean_url
+        
+    try:
+        parsed_url = urlparse(clean_url)
+        
+        # Lowercase the domain parts (netloc/hostname are case-insensitive)
+        netloc = parsed_url.netloc.lower().strip()
+        hostname = parsed_url.hostname.lower().strip() if parsed_url.hostname else ""
+        
+        if not netloc:
+            raise ValueError()
+            
+        # Reconstruct the URL with the normalized lowercased domain
+        normalized_url = urlunparse((
+            parsed_url.scheme,    
+            netloc,              
+            parsed_url.path,    
+            parsed_url.params,   
+            parsed_url.query,     
+            parsed_url.fragment   
+        ))
+
+        #URL VALIDATION AND LOOP PREVENTION 
+        
+        if netloc in BLOCKED_HOSTS_AND_PORTS or hostname in BLOCKED_HOSTS_AND_PORTS:
+            raise HTTPException(
+                status_code=400,
+                detail="Cannot shorten a URL belonging to this service."
+            )
+            
+        
+    except (ValueError, AttributeError):
+        raise HTTPException(
+            status_code=422,
+            detail="The provided URL is malformed or invalid."
+        )
+
+    if not validators.url(normalized_url):
         raise HTTPException(status_code = 400 ,detail="Your provided URL is not valid")
 
     existing_url = (
         db.query(URL)
-        .filter(URL.url == url_req.url)
+        .filter(URL.url == normalized_url)
         .order_by(desc(URL.url_id))
         .first()
     )
@@ -55,7 +99,7 @@ def create_url(
     full_short_link = f"{base_domain}/url/{short_link}"
 
     new_url = URL(
-        url = url_req.url,
+        url = normalized_url,
         short_link = short_link,
         owner_id = current_user.userid
     )
