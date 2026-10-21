@@ -71,7 +71,8 @@ class MemoryCacheClass:
 
         try:
             value = loader()
-            self.set(key, value, ttl)
+            eff_ttl = (5 if value is None else ttl) 
+            self.set(key, value, eff_ttl )
             future.set_result(value)
             return value
 

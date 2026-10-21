@@ -109,6 +109,8 @@ def create_url(
     db.add(new_url)
     db.commit()
     logging.info(f"New short link generated : '{current_user.userid}'")
+
+    MemoryCacheClass.set()
     return new_url , full_short_link
 
 
@@ -123,20 +125,27 @@ def get_url_link(
 
     
     def load_url_query():
-        return (
-            db.query(URL)
+        result =  (
+            db.query(URL.url_id , URL.url)
             .filter(URL.short_link == short_link)
             .order_by(desc(URL.url_id))
             .first()
         )
+        if result is None:
+            return None
+        
+        return {
+            "url_id" : result.url_id,
+            "url" : result.url
+        }
 
-    exist_url = url_cache.get_or_load(
+    cached_url = url_cache.get_or_load(
         key = cache_key, 
         loader = load_url_query, 
         ttl = URL_CACHE_TTL
     )
 
-    if exist_url is None:
+    if cached_url is None:
         raise HTTPException(status_code=404,detail=f"Invalid Link , can't redirect to URL")
 
     referer = request.headers.get("referer") or "null"
@@ -151,14 +160,14 @@ def get_url_link(
     date_time = datetime.now()
 
     stats_obs.notify_observers(
-        url_id = exist_url.url_id, 
+        url_id = cached_url["url_id"], 
         date_time = date_time , 
         referer =  referer , 
         referer_domain = referer_domain,
         client_ip = client_ip
     )
 
-    return RedirectResponse(url = exist_url.url , status_code = 303)
+    return RedirectResponse(url = cached_url["url"] , status_code = 303)
 
 # def get_user_urls(
 #     db: Session,
