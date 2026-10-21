@@ -18,6 +18,8 @@ from operations.tasks import record_click_metrics
 from observers.subject import stats_obs
 from builders.builder import StatsBuilderClass
 from operations.analytics import apply_click_date_filters , build_click_analytics 
+from cache.cache_details import url_cache , URL_CACHE_TTL , NEGATIVE_CACHE_TTL
+
 
 def create_url(
     db : Session,
@@ -106,8 +108,18 @@ def create_url(
 
     db.add(new_url)
     db.commit()
+
+    url.cache.set(
+        key=f"url : {new_url.short}",
+        value={
+            "url_id" : new_url.url_id,
+            "url" : new_url.url
+        },
+        ttl= URL_CACHE_TTL
+    )
     logging.info(f"New short link generated : '{current_user.userid}'")
     return new_url , full_short_link
+
 
 def get_url_link(
     db : Session ,
@@ -116,14 +128,31 @@ def get_url_link(
     client_ip : str
     ):
 
-    exist_url = (
-        db.query(URL)
-        .filter(URL.short_link == short_link)
-        .order_by(desc(URL.url_id)).
-        first()
+    cache_key = f"url:{short_link} "
+
+    
+    def load_url_query():
+        result =  (
+            db.query(URL.url_id , URL.url)
+            .filter(URL.short_link == short_link)
+            .order_by(desc(URL.url_id))
+            .first()
+        )
+        if result is None:
+            return None
+        
+        return {
+            "url_id" : result.url_id,
+            "url" : result.url
+        }
+
+    cached_url = url_cache.get_or_load(
+        key = cache_key, 
+        loader = load_url_query, 
+        ttl = URL_CACHE_TTL
     )
 
-    if exist_url is None:
+    if cached_url is None:
         raise HTTPException(status_code=404,detail=f"Invalid Link , can't redirect to URL")
 
     referer = request.headers.get("referer") or "null"
@@ -138,14 +167,14 @@ def get_url_link(
     date_time = datetime.now()
 
     stats_obs.notify_observers(
-        url_id = exist_url.url_id, 
+        url_id = cached_url["url_id"], 
         date_time = date_time , 
         referer =  referer , 
         referer_domain = referer_domain,
         client_ip = client_ip
     )
 
-    return RedirectResponse(url = exist_url.url , status_code = 303)
+    return RedirectResponse(url = cached_url["url"] , status_code = 303)
 
 # def get_user_urls(
 #     db: Session,
@@ -246,7 +275,7 @@ def get_user_dashboard(
     db : Session,
     current_user : Users,
     page: int = 1,
-    limit: int =10
+    limit: int = 10
     ):
     owner_id = current_user.userid
 
@@ -446,11 +475,16 @@ def delete_url(
         db.rollback()
         logging.exception(e)
         raise 
+    try:
+        url.cache.delete(f"url :{short_link}")
 
+    except Exception:
+        logging.exception("Cache Invalidation failed")
     logging.info(f"ID {url_id} , url deleted by : '{current_user.username}'")
+
     return {
         "message" : f"ID - {url_id} Deleted successfully"
-        }
+    }
 
 
 # def delete_all(
