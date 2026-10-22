@@ -1,5 +1,5 @@
 from datetime import datetime
-from database.schema import URL , ClickLog , URLStats
+from database.schema import URL , ClickLog
 from operations.tasks import record_click_metrics
 from tests.conftest import authenticated_client , created_url
 

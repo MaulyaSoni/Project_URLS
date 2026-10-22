@@ -1,12 +1,10 @@
 from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier
 from time import sleep
-
-from cache.memory_cache import MemoryCache
-
+from cache.memory_cache import MemoryCacheClass
 
 def test_cache_hit():
-    cache = MemoryCache()
+    cache = MemoryCacheClass()
 
     cache.set("url:abc123", {"url": "https://example.com"})
 
@@ -17,7 +15,7 @@ def test_cache_hit():
 
 
 def test_ttl_expiration():
-    cache = MemoryCache()
+    cache = MemoryCacheClass()
 
     cache.set("url:abc123", "value", ttl=0.05)
 
@@ -30,7 +28,7 @@ def test_ttl_expiration():
 
 
 def test_negative_caching():
-    cache = MemoryCache()
+    cache = MemoryCacheClass()
     calls = 0
 
     def loader():
@@ -56,7 +54,7 @@ def test_negative_caching():
 
 
 def test_concurrent_misses_share_one_loader():
-    cache = MemoryCache()
+    cache = MemoryCacheClass()
     barrier = Barrier(10)
     calls = 0
 

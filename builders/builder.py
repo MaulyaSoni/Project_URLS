@@ -9,9 +9,6 @@ class DynamicBuilder:
         for key , value in userBuilder.items():
             setattr(self , key , value)
     
-    # def __repr__(self):
-    #     return {self.__dict__}
-
 class StatsBuilderClass:
     
     def __init__(self):

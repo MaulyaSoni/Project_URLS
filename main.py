@@ -18,6 +18,7 @@ from operations.user import get_current_user
 from observers.obs_context import lifespan
 from dependencies.context import admin_context , current_user_context , new_user_context
 from middlewares.central_middleware import unified_logging_and_exception_middleware
+from dependencies.rate_limiter import check_rate_limit
 
 logging.basicConfig(
     filename="Log_employee_project.log",
@@ -142,15 +143,21 @@ def create_new_url(
     except Exception as e:
         db.rollback()
         logging.error(e)
-        raise HTTPException(status_code=500 ,detail="Internal Server Error")     
+        raise HTTPException(status_code=500 ,detail="Internal Server Error")    
 
-@app.get("/urls/click_stats", response_model = ClickStatsResponse)
+def rate_limit_dependency(request: Request, db: Session = Depends(get_db)):
+    client_ip = request.client.host
+    check_rate_limit(db=db, identifier=client_ip, max_requests=1, window_seconds=60)
+
+@app.get("/urls/click_stats"
+, dependencies = [Depends(rate_limit_dependency)] 
+, response_model = ClickStatsResponse)
 def fetch_url_clicks(
     start_date: date | None = None,
     end_date: date | None = None,
     page: int = Query(1, ge=1),
     limit: int = Query(10, ge=1, le=100),
-    context=Depends(current_user_context)
+    context=Depends(current_user_context,)
 ):
     try:
         return get_urls_clicks_details(context["db"],context["current_user"],start_date,end_date,page,limit)

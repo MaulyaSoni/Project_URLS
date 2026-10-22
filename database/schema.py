@@ -23,7 +23,7 @@ class URL(Base):
     total_clicks : Mapped[int] = mapped_column(Integer , default=0)
 
     logs = relationship("ClickLog" , back_populates = "url_obj")
-
+  
 class ClickLog(Base):
     __tablename__ = 'ClickLog_table'
     
@@ -41,3 +41,11 @@ class RevokedToken(Base):
     tokenid : Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     token : Mapped[str] = mapped_column(String(512), unique=True, index=True, nullable=False)
     created_at : Mapped[date] = mapped_column(DateTime, default=datetime.now)
+
+
+class RateLimit(Base):
+    __tablename__="rate_limit_tokens"
+    identifier : Mapped[str] = mapped_column(String(255) , primary_key = True  , nullable = False)
+    request_count : Mapped[int] = mapped_column(Integer)
+    window_start : Mapped[datetime] = mapped_column(DateTime , nullable= False)
+   
