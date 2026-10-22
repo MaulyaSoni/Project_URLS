@@ -21,7 +21,7 @@ from middlewares.central_middleware import unified_logging_and_exception_middlew
 
 logging.basicConfig(
     filename="Log_employee_project.log",
-    level=logging.INFO,
+    level=logging.DEBUG,
     format="%(asctime)s - %(levelname)s - %(message)s",
 )
  
