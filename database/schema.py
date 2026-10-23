@@ -1,4 +1,4 @@
-from sqlalchemy import Integer , String  , Column , ForeignKey , Sequence , Date , DateTime 
+from sqlalchemy import Integer , String  , Column , ForeignKey , Sequence , Date , DateTime , Float , Boolean
 from sqlalchemy.orm import DeclarativeBase , Mapped , mapped_column , relationship
 from datetime import datetime , date
 class Base(DeclarativeBase):
@@ -21,9 +21,9 @@ class URL(Base):
     owner_id : Mapped[int] = mapped_column(Integer , ForeignKey("User_table.userid"), nullable = False)
     short_link: Mapped[str] = mapped_column(String(200) , unique = True  , nullable = False)
     total_clicks : Mapped[int] = mapped_column(Integer , default=0)
-
+    active : Mapped[bool] = mapped_column(Boolean , nullable = False)
     logs = relationship("ClickLog" , back_populates = "url_obj")
-
+  
 class ClickLog(Base):
     __tablename__ = 'ClickLog_table'
     
@@ -41,3 +41,11 @@ class RevokedToken(Base):
     tokenid : Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     token : Mapped[str] = mapped_column(String(512), unique=True, index=True, nullable=False)
     created_at : Mapped[date] = mapped_column(DateTime, default=datetime.now)
+
+
+class RateLimit(Base):
+    __tablename__="rate_limit_tokens"
+
+    identifier : Mapped[str] = mapped_column(String(255) , primary_key = True  , nullable = False)
+    tokens : Mapped[float] = mapped_column(Float , default = 10.0)
+    last_updated : Mapped[datetime] = mapped_column(DateTime , default = datetime.now)

@@ -1,7 +1,7 @@
 import os
 import logging
-from math import ceil
 import validators
+from math import ceil
 from dotenv import load_dotenv
 from datetime import datetime , date , time , timedelta
 from urllib.parse import urlparse , urlunparse
@@ -20,7 +20,6 @@ from builders.builder import StatsBuilderClass
 from operations.analytics import apply_click_date_filters , build_click_analytics 
 from cache.cache_details import url_cache , URL_CACHE_TTL , NEGATIVE_CACHE_TTL
 
-
 def create_url(
     db : Session,
     request : Request,
@@ -30,7 +29,6 @@ def create_url(
     
     BLOCKED_HOSTS_AND_PORTS = os.getenv("BLOCKED_HOSTS_AND_PORTS")
 
-   
     clean_url = url_req.url.strip()
     
     #URL NORMALIZATION 
@@ -103,14 +101,15 @@ def create_url(
     new_url = URL(
         url = normalized_url,
         short_link = short_link,
-        owner_id = current_user.userid
+        owner_id = current_user.userid,
+        active = True
     )
 
     db.add(new_url)
     db.commit()
 
-    url.cache.set(
-        key=f"url : {new_url.short}",
+    url_cache.set(
+        key=f"url : {new_url.short_link}",
         value={
             "url_id" : new_url.url_id,
             "url" : new_url.url
@@ -127,14 +126,14 @@ def get_url_link(
     short_link : str,
     client_ip : str
     ):
-
+  
     cache_key = f"url:{short_link} "
 
     
     def load_url_query():
         result =  (
             db.query(URL.url_id , URL.url)
-            .filter(URL.short_link == short_link)
+            .filter(URL.short_link == short_link , URL.active == True)
             .order_by(desc(URL.url_id))
             .first()
         )
@@ -176,34 +175,6 @@ def get_url_link(
 
     return RedirectResponse(url = cached_url["url"] , status_code = 303)
 
-# def get_user_urls(
-#     db: Session,
-#     current_user: Users,
-#     page: int = 1,
-#     limit: int = 10
-# ):
-#     query = (
-#         db.query(URL)
-#         .filter(URL.owner_id == current_user.userid)
-#         .order_by(desc(URL.url_id))
-#     )
-
-#     total = query.count()
-
-#     urls = (
-#         query
-#         .offset((page - 1) * limit)
-#         .limit(limit)
-#         .all()
-#     )
-
-#     return {
-#         "items": urls,
-#         "page": page,
-#         "limit": limit,
-#         "total": total,
-#         "total_pages": ceil(total / limit) if total else 0
-#     }
 def get_user_urls(
     db: Session,
     current_user: Users,
@@ -220,15 +191,14 @@ def get_user_urls(
             db=db,
             owner_id=current_user.userid,
             page=page,
-            limit=limit
+            limit=limit,
+            is_active = True
         )
         .build()
     )
-
-    return {
-        "items": data.urls,
-        **data.url_pagination
-    }
+    res = data.url_pagination
+    res["items"]= data.urls
+    return res
 
 def get_urls_clicks_details(
     db: Session,
@@ -241,7 +211,7 @@ def get_urls_clicks_details(
     logs_query = (
         db.query(ClickLog)
         .join(URL, ClickLog.url_id == URL.url_id)
-        .filter(URL.owner_id == current_user.userid)
+        .filter(URL.owner_id == current_user.userid, URL.active == True)
     )
 
     logs_query = apply_click_date_filters(logs_query,start_date,end_date)
@@ -286,9 +256,9 @@ def get_user_dashboard(
 
     data = (
         builder
-        .add_urls(db = db , owner_id = owner_id , page=page , limit=limit) 
-        .add_logs(db = db , owner_id = owner_id, page=page , limit=limit)
-        .add_daily_clicks(db = db , owner_id = owner_id)
+        .add_urls(db = db , owner_id = owner_id , page=page , limit=limit , is_active = True) 
+        .add_logs(db = db , owner_id = owner_id, page=page , limit=limit ,is_active = True)
+        .add_daily_clicks(db = db , owner_id = owner_id , is_active = True)
         .build()
     )
 
@@ -298,7 +268,7 @@ def get_admin_dashboard(
     db : Session ,
     current_user : Users,
     page: int = 1,
-    limit: int =10
+    limit: int = 15
     ):
     owner_id = current_user.userid
 
@@ -350,35 +320,11 @@ def get_admin_dashboard(
         "urls":urls , "click_logs" : logs , "analytics":daily_clicks_response    
     }
  
-# def get_all_url(
-#     db: Session,
-#     current_user: Users,
-#     page: int = 1,
-#     limit: int = 10
-# ):
-#     query = db.query(URL).order_by(desc(URL.url_id))
-
-#     total = query.count()
-
-#     urls = (
-#         query
-#         .offset((page - 1) * limit)
-#         .limit(limit)
-#         .all()
-#     )
-
-#     return {
-#         "items": urls,
-#         "page": page,
-#         "limit": limit,
-#         "total": total,
-#         "total_pages": ceil(total / limit) if total else 0
-#     }
 def get_all_url(
     db: Session,
     current_user: Users,
-    page: int = 1,
-    limit: int = 10
+    page: int = 3,
+    limit: int = 25
     ):
 
     data = (
@@ -389,13 +335,12 @@ def get_all_url(
             limit=limit,
             all_urls=True
         )
-    .build()
+        .build()
     )
 
-    return {
-        "items": data.urls,
-        **data.url_pagination
-    }
+    res = data.url_pagination
+    res["items"]= data.urls
+    return res
 
 def get_url_stats(
     db: Session,
@@ -406,14 +351,14 @@ def get_url_stats(
     page: int = 1,
     limit: int = 10
 ):
-    url_res = db.get(URL, url_id)
+    url_res = db.query(URL).filter(URL.url_id == url_id , URL.active == True).first()
 
     if url_res is None:
         raise HTTPException(status_code=404,detail="URL ID not found")
 
-    if (url_res.owner_id != current_user.userid and current_user.user_role != "Admin"):
+    if (URL.owner_id != current_user.userid and current_user.user_role != "Admin"):
         raise HTTPException(status_code=403,detail="Access restricted")
-
+        
     logs_query = db.query(ClickLog).filter(
         ClickLog.url_id == url_id
     )
@@ -450,41 +395,47 @@ def delete_url(
     url_id : int,
     current_user : str
 ):
-    url = db.get(URL , url_id)
+    url = db.query(URL).filter(URL.url_id == url_id , URL.active == True).first()
 
     if url is None:  
         raise HTTPException(status_code = 404 , detail = "URL ID not found")
         
     if url.owner_id != current_user.userid and current_user.user_role != 'Admin':
         raise HTTPException(status_code = 403 , detail = "!! Access restricted !!")
+    url.active = False
 
-    try:
-    
-        db.query(ClickLog).filter(ClickLog.url_id == url_id).delete(
-            synchronize_session = False)
+    db.commit()
 
-        db.delete(url)
-        db.commit()
-    
-    except IntegrityError as e:
-        db.rollback()
-        raise HTTPException(status_code = 409 , detail=str(e))
-
-
-    except Exception as e:
-        db.rollback()
-        logging.exception(e)
-        raise 
     try:
         url.cache.delete(f"url :{short_link}")
 
     except Exception:
         logging.exception("Cache Invalidation failed")
+
     logging.info(f"ID {url_id} , url deleted by : '{current_user.username}'")
 
     return {
         "message" : f"ID - {url_id} Deleted successfully"
     }
+
+    # try:
+    #     db.query(ClickLog).filter(ClickLog.url_id == url_id).delete(
+    #         synchronize_session = False)
+
+    #     db.delete(url)
+    #     db.commit()
+    
+    # except IntegrityError as e:
+    #     db.rollback()
+    #     raise HTTPException(status_code = 409 , detail=str(e))
+
+
+    # except Exception as e:
+    #     db.rollback()
+    #     logging.exception(e)
+    #     raise 
+
+    # SOFT Deletion 
 
 
 # def delete_all(
