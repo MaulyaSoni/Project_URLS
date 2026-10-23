@@ -8,7 +8,7 @@ from fastapi.exceptions import HTTPException
 from database.db import get_db , SessionLocal
 from database.schema import Users
 from models.user import UsersResponse , UsersRequest
-from models.url import URLRequest , URLResponse  , DashboardResponse , URLPageResponse , URLDetailsResponse , AnalyticsResponse , ClickStatsResponse , PaginationMetadataReposne
+from models.url import URLRequest , URLResponse  ,URLResponseActive ,  DashboardResponse , URLPageResponse , URLDetailsResponse , AnalyticsResponse , ClickStatsResponse , PaginationMetadataReposne
 from models.message import MessageResponse
 from routes.user import create_admin , create_user , fetch_all_user , delete_user ,login_with_token ,logout_route
 from routes.url import get_url_link , get_all_url , get_url_stats 
@@ -120,7 +120,7 @@ def logout(
         logging.error(e)
         raise HTTPException(status_code = 500 , detail="Internal Server Error")
 
-@app.post("/url" , dependencies = [Depends(rate_limit_dependency)] , response_model = URLResponse , status_code=201)
+@app.post("/url" , dependencies = [Depends(rate_limit_dependency)] , response_model = URLResponseActive , status_code=201)
 def create_new_url(
     request : Request,
     req : URLRequest,
@@ -134,7 +134,8 @@ def create_new_url(
             "url":new_url.url,
             "short_link": full_link,
             "owner_id":new_url.owner_id,
-            "total_clicks":new_url.total_clicks
+            "total_clicks":new_url.total_clicks,
+            "is_active":new_url.active
         }   
 
     except HTTPException:
@@ -168,7 +169,7 @@ def fetch_url_clicks(
 @app.get("/urls" , dependencies = [Depends(rate_limit_dependency)] , response_model = URLPageResponse)
 def fetch_all_url(
     page: int = Query(1, ge=1),
-    limit: int = Query(10, ge=1, le=100),
+    limit: int = Query(15, ge=1, le=100),
     context=Depends(admin_context)
 ):
     try:
@@ -219,7 +220,9 @@ def fetch_url_from_short_link(
         logging.exception("Failed to process the short_link redirection",e)
         raise HTTPException(status_code=500 , detail="Internal Server Error")
 
-@app.get("/admin/dashboard" , dependencies = [Depends(rate_limit_dependency)], response_model = DashboardResponse)
+@app.get("/admin/dashboard" , dependencies = [Depends(rate_limit_dependency)]
+, response_model = DashboardResponse
+)
 def fetch_admin_dashboard(
     page : int | None = None,
     limit : int | None = None,
@@ -239,7 +242,9 @@ def fetch_admin_dashboard(
         logging.exception(e)
         raise HTTPException(status_code=500 , detail="Internal Server Error")
 
-@app.get("/my/dashboard" , dependencies = [Depends(rate_limit_dependency)] , response_model = DashboardResponse)
+@app.get("/my/dashboard" , dependencies = [Depends(rate_limit_dependency)] 
+, response_model = DashboardResponse
+)
 def fetch_user_dashboard(
     page : int | None = None,
     limit : int | None = None,

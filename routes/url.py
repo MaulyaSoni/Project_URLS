@@ -102,14 +102,15 @@ def create_url(
     new_url = URL(
         url = normalized_url,
         short_link = short_link,
-        owner_id = current_user.userid
+        owner_id = current_user.userid,
+        active = True
     )
 
     db.add(new_url)
     db.commit()
 
-    url.cache.set(
-        key=f"url : {new_url.short}",
+    url_cache.set(
+        key=f"url : {new_url.short_link}",
         value={
             "url_id" : new_url.url_id,
             "url" : new_url.url
@@ -126,14 +127,14 @@ def get_url_link(
     short_link : str,
     client_ip : str
     ):
-
+  
     cache_key = f"url:{short_link} "
 
     
     def load_url_query():
         result =  (
             db.query(URL.url_id , URL.url)
-            .filter(URL.short_link == short_link)
+            .filter(URL.short_link == short_link , URL.active == True)
             .order_by(desc(URL.url_id))
             .first()
         )
@@ -244,7 +245,7 @@ def get_urls_clicks_details(
     logs_query = (
         db.query(ClickLog)
         .join(URL, ClickLog.url_id == URL.url_id)
-        .filter(URL.owner_id == current_user.userid)
+        .filter(URL.owner_id == current_user.userid, URL.active == True)
     )
 
     logs_query = apply_click_date_filters(logs_query,start_date,end_date)
@@ -263,7 +264,7 @@ def get_urls_clicks_details(
         .limit(limit)
         .all()
     )
-    
+
     return {
         "click_logs": click_logs,
         "analytics": analytics,
@@ -301,7 +302,7 @@ def get_admin_dashboard(
     db : Session ,
     current_user : Users,
     page: int = 1,
-    limit: int =10
+    limit: int = 20
     ):
     owner_id = current_user.userid
 
@@ -408,7 +409,7 @@ def get_url_stats(
     page: int = 1,
     limit: int = 10
 ):
-    url_res = db.get(URL, url_id)
+    url_res = db.query(URL).filter(URL.url_id == url_id , URL.active == True)
 
     if url_res is None:
         raise HTTPException(status_code=404,detail="URL ID not found")
@@ -452,7 +453,7 @@ def delete_url(
     url_id : int,
     current_user : str
 ):
-    url = db.get(URL , url_id)
+    url = db.query(URL).filter(URL.url_id == url_id , URL.active == True).first()
 
     if url is None:  
         raise HTTPException(status_code = 404 , detail = "URL ID not found")
@@ -460,23 +461,28 @@ def delete_url(
     if url.owner_id != current_user.userid and current_user.user_role != 'Admin':
         raise HTTPException(status_code = 403 , detail = "!! Access restricted !!")
 
-    try:
+    # try:
+    #     db.query(ClickLog).filter(ClickLog.url_id == url_id).delete(
+    #         synchronize_session = False)
+
+    #     db.delete(url)
+    #     db.commit()
     
-        db.query(ClickLog).filter(ClickLog.url_id == url_id).delete(
-            synchronize_session = False)
-
-        db.delete(url)
-        db.commit()
-    
-    except IntegrityError as e:
-        db.rollback()
-        raise HTTPException(status_code = 409 , detail=str(e))
+    # except IntegrityError as e:
+    #     db.rollback()
+    #     raise HTTPException(status_code = 409 , detail=str(e))
 
 
-    except Exception as e:
-        db.rollback()
-        logging.exception(e)
-        raise 
+    # except Exception as e:
+    #     db.rollback()
+    #     logging.exception(e)
+    #     raise 
+
+    # SOFT Deletion 
+    url.active = False
+
+    db.commit()
+
     try:
         url.cache.delete(f"url :{short_link}")
 

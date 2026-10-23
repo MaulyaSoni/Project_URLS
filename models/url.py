@@ -10,7 +10,12 @@ class URLResponse(BaseModel):
     owner_id : int 
     short_link : str 
     total_clicks : int
- 
+
+    model_config = ConfigDict(from_attributes=True)
+
+class URLResponseActive(URLResponse):
+    active : bool
+
     model_config = ConfigDict(from_attributes=True)
 
 class ClickLogResponse(BaseModel):
@@ -30,7 +35,7 @@ class AnalyticsResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 class DashboardResponse(BaseModel):
-    urls: list[URLResponse] | None
+    urls: list[URLResponseActive] | None
     click_logs : list[ClickLogResponse] | None
     analytics : list[AnalyticsResponse] | None
 

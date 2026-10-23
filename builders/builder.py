@@ -80,7 +80,7 @@ class StatsBuilderClass:
                 "owner_id is required unless all_urls=True"
             )
 
-        query = db.query(URL)
+        query = db.query(URL).filter(URL.active == True)
 
         if not all_urls:
             query = query.filter(URL.owner_id == owner_id)
@@ -105,7 +105,7 @@ class StatsBuilderClass:
         query = (
             db.query(ClickLog)
             .join(URL, ClickLog.url_id == URL.url_id)
-            .filter(URL.owner_id == owner_id)
+            .filter(URL.owner_id == owner_id , URL.active == True)
             .order_by(
                 desc(ClickLog.clicked_at),
                 desc(ClickLog.log_id)
@@ -133,7 +133,7 @@ class StatsBuilderClass:
                 func.count(ClickLog.log_id).label("clicks")
             )
             .join(URL, ClickLog.url_id == URL.url_id)
-            .filter(URL.owner_id == owner_id)
+            .filter(URL.owner_id == owner_id, URL.active == True)
             .group_by(
                 ClickLog.url_id,
                 func.date(ClickLog.clicked_at)

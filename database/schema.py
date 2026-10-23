@@ -1,4 +1,4 @@
-from sqlalchemy import Integer , String  , Column , ForeignKey , Sequence , Date , DateTime , Float
+from sqlalchemy import Integer , String  , Column , ForeignKey , Sequence , Date , DateTime , Float , Boolean
 from sqlalchemy.orm import DeclarativeBase , Mapped , mapped_column , relationship
 from datetime import datetime , date
 class Base(DeclarativeBase):
@@ -21,7 +21,7 @@ class URL(Base):
     owner_id : Mapped[int] = mapped_column(Integer , ForeignKey("User_table.userid"), nullable = False)
     short_link: Mapped[str] = mapped_column(String(200) , unique = True  , nullable = False)
     total_clicks : Mapped[int] = mapped_column(Integer , default=0)
-
+    active : Mapped[bool] = mapped_column(Boolean , nullable = False)
     logs = relationship("ClickLog" , back_populates = "url_obj")
   
 class ClickLog(Base):
