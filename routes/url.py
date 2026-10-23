@@ -191,7 +191,8 @@ def get_user_urls(
             db=db,
             owner_id=current_user.userid,
             page=page,
-            limit=limit
+            limit=limit,
+            is_active = True
         )
         .build()
     )
@@ -334,7 +335,7 @@ def get_all_url(
             limit=limit,
             all_urls=True
         )
-    .build()
+        .build()
     )
 
     res = data.url_pagination
@@ -350,14 +351,14 @@ def get_url_stats(
     page: int = 1,
     limit: int = 10
 ):
-    url_res = db.query(URL).filter(URL.url_id == url_id , URL.active == True)
+    url_res = db.query(URL).filter(URL.url_id == url_id , URL.active == True).first()
 
     if url_res is None:
         raise HTTPException(status_code=404,detail="URL ID not found")
 
-    if (url_res.owner_id != current_user.userid and current_user.user_role != "Admin"):
+    if (URL.owner_id != current_user.userid and current_user.user_role != "Admin"):
         raise HTTPException(status_code=403,detail="Access restricted")
-
+        
     logs_query = db.query(ClickLog).filter(
         ClickLog.url_id == url_id
     )
@@ -410,6 +411,7 @@ def delete_url(
 
     except Exception:
         logging.exception("Cache Invalidation failed")
+
     logging.info(f"ID {url_id} , url deleted by : '{current_user.username}'")
 
     return {
