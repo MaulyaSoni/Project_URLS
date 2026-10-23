@@ -50,7 +50,7 @@ class PaginationMetadataReposne(BaseModel):
     model_config = ConfigDict(from_attributes = True)
 
 class URLPageResponse(PaginationMetadataReposne):
-    items: list[URLResponse]
+    items: list[URLResponseActive]
 
     model_config = ConfigDict(from_attributes = True)
 
@@ -69,7 +69,6 @@ class URLDetailsResponse(BaseModel):
     limit : int 
     total : int
     total_pages : int 
-    
 
     model_config = ConfigDict(from_attributes=True)
 

@@ -46,41 +46,24 @@ class StatsBuilderClass:
 
         return items , pagination
 
-    # def add_urls(self, db: Session, owner_id: int):
-    #     urls = (
-    #         db.query(URL)
-    #         .filter(URL.owner_id == owner_id)
-    #         .order_by(desc(URL.url_id))
-    #         .all()
-    #     )
-    #     self.userBuilder["urls"] = urls
-    #     return self
-
-
-    # def add_logs(self, db: Session, owner_id: int):
-    #     click_logs = (
-    #         db.query(ClickLog)
-    #         .join(URL, ClickLog.url_id == URL.url_id)
-    #         .filter(URL.owner_id == owner_id)
-    #         .order_by(desc(ClickLog.clicked_at))
-    #         .all()
-    #     )
-    #     self.userBuilder["click_logs"]= click_logs
-    #     return self
-
     def add_urls(self, 
         db: Session, 
+        all_urls: bool = False,
         owner_id: int | None = None,
         page: int | None = None,
         limit: int | None = None,
-        all_urls: bool = False
+        is_active : bool | None = None
     ):
         if owner_id is None and not all_urls:
             raise ValueError(
                 "owner_id is required unless all_urls=True"
             )
 
-        query = db.query(URL).filter(URL.active == True)
+        if is_active is None:
+            query = db.query(URL)
+
+        else:
+            query = db.query(URL).filter(URL.active == is_active)
 
         if not all_urls:
             query = query.filter(URL.owner_id == owner_id)
@@ -100,17 +83,30 @@ class StatsBuilderClass:
         db: Session,
         owner_id: int,
         page: int | None = None,
-        limit: int | None = None
+        limit: int | None = None,
+        is_active : bool | None = None
     ):
-        query = (
-            db.query(ClickLog)
-            .join(URL, ClickLog.url_id == URL.url_id)
-            .filter(URL.owner_id == owner_id , URL.active == True)
-            .order_by(
-                desc(ClickLog.clicked_at),
-                desc(ClickLog.log_id)
+        if is_active is None:
+            query = (
+                db.query(ClickLog)
+                .join(URL, ClickLog.url_id == URL.url_id)
+                .filter(URL.owner_id == owner_id)
+                .order_by(
+                    desc(ClickLog.clicked_at),
+                    desc(ClickLog.log_id)
+                )
             )
-        )
+
+        else:
+            query = (
+                db.query(ClickLog)
+                .join(URL, ClickLog.url_id == URL.url_id)
+                .filter(URL.owner_id == owner_id , URL.active == is_active)
+                .order_by(
+                    desc(ClickLog.clicked_at),
+                    desc(ClickLog.log_id)
+                )
+            )
 
         click_logs, pagination = self.paginate(query,page,limit)
 
@@ -124,25 +120,47 @@ class StatsBuilderClass:
 
     def add_daily_clicks(self,
         db: Session, 
-        owner_id: int
+        owner_id: int,
+        is_active : bool | None = None
     ):
-        daily_clicks = (
-            db.query(
-                ClickLog.url_id,
-                func.date(ClickLog.clicked_at).label("date"),
-                func.count(ClickLog.log_id).label("clicks")
+
+        if is_active is None:
+            daily_clicks = (
+                db.query(
+                    ClickLog.url_id,
+                    func.date(ClickLog.clicked_at).label("date"),
+                    func.count(ClickLog.log_id).label("clicks")
+                )
+                .join(URL, ClickLog.url_id == URL.url_id)
+                .filter(URL.owner_id == owner_id)
+                .group_by(
+                    ClickLog.url_id,
+                    func.date(ClickLog.clicked_at)
+                )
+                .order_by(
+                    desc(func.date(ClickLog.clicked_at))
+                )
+                .all()
             )
-            .join(URL, ClickLog.url_id == URL.url_id)
-            .filter(URL.owner_id == owner_id, URL.active == True)
-            .group_by(
-                ClickLog.url_id,
-                func.date(ClickLog.clicked_at)
+
+        else:
+            daily_clicks = (
+                db.query(
+                    ClickLog.url_id,
+                    func.date(ClickLog.clicked_at).label("date"),
+                    func.count(ClickLog.log_id).label("clicks")
+                )
+                .join(URL, ClickLog.url_id == URL.url_id)
+                .filter(URL.owner_id == owner_id, URL.active == is_active)
+                .group_by(
+                    ClickLog.url_id,
+                    func.date(ClickLog.clicked_at)
+                )
+                .order_by(
+                    desc(func.date(ClickLog.clicked_at))
+                )
+                .all()
             )
-            .order_by(
-                desc(func.date(ClickLog.clicked_at))
-            )
-            .all()
-        )
 
         daily_clicks_response = [
             {
@@ -156,11 +174,7 @@ class StatsBuilderClass:
         return self
    
     def build(self) -> BuilderStatsInterface:
-        # details = BuilderStatsInterface(
-        #   urls =  self.urls,
-        #   click_logs = self.click_logs,
-        #   daily_clicks_response = self.daily_clicks_response
-        # )
+
         details = DynamicBuilder(self.userBuilder)
         self.reset()
         return details

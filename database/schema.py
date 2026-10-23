@@ -45,8 +45,7 @@ class RevokedToken(Base):
 
 class RateLimit(Base):
     __tablename__="rate_limit_tokens"
+
     identifier : Mapped[str] = mapped_column(String(255) , primary_key = True  , nullable = False)
-    # request_count : Mapped[int] = mapped_column(Integer)
-    # window_start : Mapped[datetime] = mapped_column(DateTime , nullable= False)
     tokens : Mapped[float] = mapped_column(Float , default = 10.0)
     last_updated : Mapped[datetime] = mapped_column(DateTime , default = datetime.now)

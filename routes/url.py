@@ -1,7 +1,7 @@
 import os
 import logging
-from math import ceil
 import validators
+from math import ceil
 from dotenv import load_dotenv
 from datetime import datetime , date , time , timedelta
 from urllib.parse import urlparse , urlunparse
@@ -19,7 +19,6 @@ from observers.subject import stats_obs
 from builders.builder import StatsBuilderClass
 from operations.analytics import apply_click_date_filters , build_click_analytics 
 from cache.cache_details import url_cache , URL_CACHE_TTL , NEGATIVE_CACHE_TTL
-
 
 def create_url(
     db : Session,
@@ -176,34 +175,6 @@ def get_url_link(
 
     return RedirectResponse(url = cached_url["url"] , status_code = 303)
 
-# def get_user_urls(
-#     db: Session,
-#     current_user: Users,
-#     page: int = 1,
-#     limit: int = 10
-# ):
-#     query = (
-#         db.query(URL)
-#         .filter(URL.owner_id == current_user.userid)
-#         .order_by(desc(URL.url_id))
-#     )
-
-#     total = query.count()
-
-#     urls = (
-#         query
-#         .offset((page - 1) * limit)
-#         .limit(limit)
-#         .all()
-#     )
-
-#     return {
-#         "items": urls,
-#         "page": page,
-#         "limit": limit,
-#         "total": total,
-#         "total_pages": ceil(total / limit) if total else 0
-#     }
 def get_user_urls(
     db: Session,
     current_user: Users,
@@ -227,12 +198,6 @@ def get_user_urls(
     res = data.url_pagination
     res["items"]= data.urls
     return res
-
-    # **data.url_pagination , ** is the unpack operator for dict , so key-value pair sit side by side with the items here ""
-    # return {
-    #     "items": data.urls,
-    #     **data.url_pagination
-    # }
 
 def get_urls_clicks_details(
     db: Session,
@@ -290,9 +255,9 @@ def get_user_dashboard(
 
     data = (
         builder
-        .add_urls(db = db , owner_id = owner_id , page=page , limit=limit) 
-        .add_logs(db = db , owner_id = owner_id, page=page , limit=limit)
-        .add_daily_clicks(db = db , owner_id = owner_id)
+        .add_urls(db = db , owner_id = owner_id , page=page , limit=limit , is_active = True) 
+        .add_logs(db = db , owner_id = owner_id, page=page , limit=limit ,is_active = True)
+        .add_daily_clicks(db = db , owner_id = owner_id , is_active = True)
         .build()
     )
 
@@ -302,7 +267,7 @@ def get_admin_dashboard(
     db : Session ,
     current_user : Users,
     page: int = 1,
-    limit: int = 20
+    limit: int = 15
     ):
     owner_id = current_user.userid
 
@@ -354,35 +319,11 @@ def get_admin_dashboard(
         "urls":urls , "click_logs" : logs , "analytics":daily_clicks_response    
     }
  
-# def get_all_url(
-#     db: Session,
-#     current_user: Users,
-#     page: int = 1,
-#     limit: int = 10
-# ):
-#     query = db.query(URL).order_by(desc(URL.url_id))
-
-#     total = query.count()
-
-#     urls = (
-#         query
-#         .offset((page - 1) * limit)
-#         .limit(limit)
-#         .all()
-#     )
-
-#     return {
-#         "items": urls,
-#         "page": page,
-#         "limit": limit,
-#         "total": total,
-#         "total_pages": ceil(total / limit) if total else 0
-#     }
 def get_all_url(
     db: Session,
     current_user: Users,
-    page: int = 1,
-    limit: int = 10
+    page: int = 3,
+    limit: int = 25
     ):
 
     data = (
@@ -460,6 +401,20 @@ def delete_url(
         
     if url.owner_id != current_user.userid and current_user.user_role != 'Admin':
         raise HTTPException(status_code = 403 , detail = "!! Access restricted !!")
+    url.active = False
+
+    db.commit()
+
+    try:
+        url.cache.delete(f"url :{short_link}")
+
+    except Exception:
+        logging.exception("Cache Invalidation failed")
+    logging.info(f"ID {url_id} , url deleted by : '{current_user.username}'")
+
+    return {
+        "message" : f"ID - {url_id} Deleted successfully"
+    }
 
     # try:
     #     db.query(ClickLog).filter(ClickLog.url_id == url_id).delete(
@@ -479,20 +434,6 @@ def delete_url(
     #     raise 
 
     # SOFT Deletion 
-    url.active = False
-
-    db.commit()
-
-    try:
-        url.cache.delete(f"url :{short_link}")
-
-    except Exception:
-        logging.exception("Cache Invalidation failed")
-    logging.info(f"ID {url_id} , url deleted by : '{current_user.username}'")
-
-    return {
-        "message" : f"ID - {url_id} Deleted successfully"
-    }
 
 
 # def delete_all(
