@@ -30,7 +30,6 @@ def create_url(
     
     BLOCKED_HOSTS_AND_PORTS = os.getenv("BLOCKED_HOSTS_AND_PORTS")
 
-   
     clean_url = url_req.url.strip()
     
     #URL NORMALIZATION 
@@ -224,11 +223,15 @@ def get_user_urls(
         )
         .build()
     )
+    res = data.url_pagination
+    res["items"]= data.urls
+    return res
 
-    return {
-        "items": data.urls,
-        **data.url_pagination
-    }
+    # **data.url_pagination , ** is the unpack operator for dict , so key-value pair sit side by side with the items here ""
+    # return {
+    #     "items": data.urls,
+    #     **data.url_pagination
+    # }
 
 def get_urls_clicks_details(
     db: Session,
@@ -260,7 +263,7 @@ def get_urls_clicks_details(
         .limit(limit)
         .all()
     )
-
+    
     return {
         "click_logs": click_logs,
         "analytics": analytics,
@@ -392,10 +395,9 @@ def get_all_url(
     .build()
     )
 
-    return {
-        "items": data.urls,
-        **data.url_pagination
-    }
+    res = data.url_pagination
+    res["items"]= data.urls
+    return res
 
 def get_url_stats(
     db: Session,

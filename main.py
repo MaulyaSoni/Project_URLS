@@ -18,7 +18,7 @@ from operations.user import get_current_user
 from observers.obs_context import lifespan
 from dependencies.context import admin_context , current_user_context , new_user_context
 from middlewares.central_middleware import unified_logging_and_exception_middleware
-from dependencies.rate_limiter import check_rate_limit
+from dependencies.rate_limiter import rate_limit_dependency , render_rate_limit
 
 logging.basicConfig(
     filename="Log_employee_project.log",
@@ -38,7 +38,7 @@ async def add_custom_middleware(request, call_next):
 #     # if targetted database not exist , then generates the all defined db and tables 
 #     Base.metadata.create_all(engine)   
 
-@app.post("/user", response_model= UsersResponse , status_code=201)
+@app.post("/user", dependencies = [Depends(rate_limit_dependency)] , response_model= UsersResponse , status_code=201)
 def register_user(
     user_data: UsersRequest,
     db: Session = Depends(get_db)
@@ -61,7 +61,7 @@ def register_user(
         raise HTTPException(status_code=500 , detail="Internal Server Error")
 
     
-@app.post("/admin" , response_model = UsersResponse , status_code = 201)
+@app.post("/admin" , dependencies = [Depends(rate_limit_dependency)]  , response_model = UsersResponse , status_code = 201)
 def register_admin(
     user_data: UsersRequest,
     admin_key : str,
@@ -85,7 +85,7 @@ def register_admin(
         raise HTTPException(status_code=500 , detail="Internal Server Error")
 
 
-@app.post("/login")
+@app.post("/login", dependencies = [Depends(rate_limit_dependency)] )
 def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db) 
@@ -120,7 +120,7 @@ def logout(
         logging.error(e)
         raise HTTPException(status_code = 500 , detail="Internal Server Error")
 
-@app.post("/url" , response_model = URLResponse , status_code=201)
+@app.post("/url" , dependencies = [Depends(rate_limit_dependency)] , response_model = URLResponse , status_code=201)
 def create_new_url(
     request : Request,
     req : URLRequest,
@@ -145,10 +145,6 @@ def create_new_url(
         logging.error(e)
         raise HTTPException(status_code=500 ,detail="Internal Server Error")    
 
-def rate_limit_dependency(request: Request, db: Session = Depends(get_db)):
-    client_ip = request.client.host
-    check_rate_limit(db=db, identifier=client_ip, max_requests=1, window_seconds=60)
-
 @app.get("/urls/click_stats"
 , dependencies = [Depends(rate_limit_dependency)] 
 , response_model = ClickStatsResponse)
@@ -169,7 +165,7 @@ def fetch_url_clicks(
         logging.exception("Failed to fetch click statistics", e)
         raise HTTPException(status_code=500,detail="Internal Server Error")
 
-@app.get("/urls" , response_model = URLPageResponse)
+@app.get("/urls" , dependencies = [Depends(rate_limit_dependency)] , response_model = URLPageResponse)
 def fetch_all_url(
     page: int = Query(1, ge=1),
     limit: int = Query(10, ge=1, le=100),
@@ -185,7 +181,7 @@ def fetch_all_url(
         logging.exception("Failed to fetch URLs",e)
         raise HTTPException(status_code=500,detail="Internal Server Error")
 
-@app.get("/my/urls", response_model= URLPageResponse)
+@app.get("/my/urls", dependencies = [Depends(rate_limit_dependency)] , response_model= URLPageResponse)
 def fetch_user_urls(
     page: int = Query(1, ge=1),
     limit: int = Query(10, ge=1, le=100),
@@ -202,7 +198,7 @@ def fetch_user_urls(
         raise HTTPException(status_code=500,detail="Internal Server Error")
         
         
-@app.get("/url/{short_link}")
+@app.get("/url/{short_link}" , dependencies = [Depends(render_rate_limit)])
 def fetch_url_from_short_link(
     short_link : str , 
     request : Request,
@@ -223,7 +219,7 @@ def fetch_url_from_short_link(
         logging.exception("Failed to process the short_link redirection",e)
         raise HTTPException(status_code=500 , detail="Internal Server Error")
 
-@app.get("/admin/dashboard" , response_model = DashboardResponse)
+@app.get("/admin/dashboard" , dependencies = [Depends(rate_limit_dependency)], response_model = DashboardResponse)
 def fetch_admin_dashboard(
     page : int | None = None,
     limit : int | None = None,
@@ -243,7 +239,7 @@ def fetch_admin_dashboard(
         logging.exception(e)
         raise HTTPException(status_code=500 , detail="Internal Server Error")
 
-@app.get("/my/dashboard" , response_model = DashboardResponse)
+@app.get("/my/dashboard" , dependencies = [Depends(rate_limit_dependency)] , response_model = DashboardResponse)
 def fetch_user_dashboard(
     page : int | None = None,
     limit : int | None = None,
@@ -264,7 +260,7 @@ def fetch_user_dashboard(
         raise HTTPException(status_code=500 , detail="Internal Server Error")
 
 
-@app.get("/url/stats/{url_id}", response_model = URLDetailsResponse)
+@app.get("/url/stats/{url_id}", dependencies = [Depends(rate_limit_dependency)], response_model = URLDetailsResponse)
 def get_url_stats_details(
     url_id: int,
     start_date: date | None = None,
@@ -284,13 +280,13 @@ def get_url_stats_details(
         raise HTTPException(status_code=500,detail="Internal Server Error")
 
 
-@app.get("/users/me" , response_model = UsersResponse)
+@app.get("/users/me" , dependencies = [Depends(rate_limit_dependency)] , response_model = UsersResponse)
 def get_my_info(
     current_user: Users = Depends(get_current_user)
 ):
     return current_user
 
-@app.get("/users/all" , response_model = list[UsersResponse])
+@app.get("/users/all" ,dependencies = [Depends(rate_limit_dependency)],  response_model = list[UsersResponse])
 def get_all_users(
     context = Depends(admin_context)
 ):
@@ -304,6 +300,7 @@ def get_all_users(
 
 
 @app.delete("/users/delete/{userid}",
+    dependencies = [Depends(rate_limit_dependency)],
     response_model = MessageResponse ,
     status_code = 200)
 def delete_single_user(
@@ -325,6 +322,7 @@ def delete_single_user(
     
      
 @app.delete("/url/delete/{url_id}" ,
+    dependencies = [Depends(rate_limit_dependency)], 
     response_model = MessageResponse ,
     status_code = 200)
 def delete_single_url(
@@ -345,6 +343,6 @@ def delete_single_url(
         raise HTTPException(status_code=500 , detail="Internal Server Error")
 
         
-@app.get("/")
+@app.get("/", dependencies = [Depends(rate_limit_dependency)])
 def read_root():
     return "Welcome to the URL shortener app"    
