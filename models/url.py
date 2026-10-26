@@ -14,7 +14,7 @@ class URLResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 class URLResponseActive(URLResponse):
-    active : bool
+    is_active : bool
 
     model_config = ConfigDict(from_attributes=True)
 

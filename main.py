@@ -147,7 +147,7 @@ def create_new_url(
             "short_link": full_link,
             "owner_id":new_url.owner_id,
             "total_clicks":new_url.total_clicks,
-            "is_active":new_url.active
+            "is_active":new_url.is_active
         }   
 
     except HTTPException:

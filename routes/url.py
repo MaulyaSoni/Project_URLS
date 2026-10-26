@@ -102,7 +102,7 @@ def create_url(
         url = normalized_url,
         short_link = short_link,
         owner_id = current_user.userid,
-        active = True
+        is_active = True
     )
 
     db.add(new_url)

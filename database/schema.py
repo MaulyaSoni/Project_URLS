@@ -21,7 +21,7 @@ class URL(Base):
     owner_id : Mapped[int] = mapped_column(Integer , ForeignKey("User_table.userid"), nullable = False)
     short_link: Mapped[str] = mapped_column(String(200) , unique = True  , nullable = False)
     total_clicks : Mapped[int] = mapped_column(Integer , default=0)
-    active : Mapped[bool] = mapped_column(Boolean , nullable = False)
+    is_active : Mapped[bool] = mapped_column(Boolean , nullable = False)
     logs = relationship("ClickLog" , back_populates = "url_obj")
   
 class ClickLog(Base):
