@@ -133,7 +133,7 @@ def get_url_link(
     def load_url_query():
         result =  (
             db.query(URL.url_id , URL.url)
-            .filter(URL.short_link == short_link , URL.active == True)
+            .filter(URL.short_link == short_link , URL.is_active == True)
             .order_by(desc(URL.url_id))
             .first()
         )
@@ -211,7 +211,7 @@ def get_urls_clicks_details(
     logs_query = (
         db.query(ClickLog)
         .join(URL, ClickLog.url_id == URL.url_id)
-        .filter(URL.owner_id == current_user.userid, URL.active == True)
+        .filter(URL.owner_id == current_user.userid, URL.is_active == True)
     )
 
     logs_query = apply_click_date_filters(logs_query,start_date,end_date)
@@ -351,7 +351,7 @@ def get_url_stats(
     page: int = 1,
     limit: int = 10
 ):
-    url_res = db.query(URL).filter(URL.url_id == url_id , URL.active == True).first()
+    url_res = db.query(URL).filter(URL.url_id == url_id , URL.is_active == True).first()
 
     if url_res is None:
         raise HTTPException(status_code=404,detail="URL ID not found")
@@ -395,14 +395,17 @@ def delete_url(
     url_id : int,
     current_user : str
 ):
-    url = db.query(URL).filter(URL.url_id == url_id , URL.active == True).first()
+    url = db.query(URL).filter(URL.url_id == url_id , URL.is_active == True).first()
 
     if url is None:  
         raise HTTPException(status_code = 404 , detail = "URL ID not found")
         
     if url.owner_id != current_user.userid and current_user.user_role != 'Admin':
         raise HTTPException(status_code = 403 , detail = "!! Access restricted !!")
-    url.active = False
+
+    # SOFT Deletion 
+
+    url.is_active = False
 
     db.commit()
 
@@ -416,7 +419,8 @@ def delete_url(
 
     return {
         "message" : f"ID - {url_id} Deleted successfully"
-    }
+        }
+
 
     # try:
     #     db.query(ClickLog).filter(ClickLog.url_id == url_id).delete(
@@ -435,7 +439,6 @@ def delete_url(
     #     logging.exception(e)
     #     raise 
 
-    # SOFT Deletion 
 
 
 # def delete_all(

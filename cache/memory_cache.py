@@ -118,7 +118,7 @@ class MemoryCacheClass:
             return value
 
         except Exception as exc:
-            logging.error(f"Loader execution failed for key {key} :{exe} " , exc_info=True)
+            logging.error(f"Loader execution failed for key {key} :{exc} " , exc_info=True)
             with self._lock:
                 future.set_exception(exc)
             raise
