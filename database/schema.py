@@ -39,6 +39,7 @@ class ClickLog(Base):
     __table_args__ = (
         Index("idx.url_id_clicked_at" , "url_id" , "clicked_at"),
     )
+    
 class RevokedToken(Base):
     __tablename__ = "revoked_tokens"
 
