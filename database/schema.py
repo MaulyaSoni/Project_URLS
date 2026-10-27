@@ -1,4 +1,4 @@
-from sqlalchemy import Integer , String  , Column , ForeignKey , Sequence , Date , DateTime , Float , Boolean
+from sqlalchemy import Integer , String  , Column , ForeignKey , Sequence , Date , DateTime , Float , Boolean , Index
 from sqlalchemy.orm import DeclarativeBase , Mapped , mapped_column , relationship
 from datetime import datetime , date
 class Base(DeclarativeBase):
@@ -35,6 +35,10 @@ class ClickLog(Base):
     ip : Mapped[str] = mapped_column(String(255))
     url_obj = relationship("URL" , back_populates="logs")
 
+
+    __table_args__ = (
+        Index("idx.url_id_clicked_at" , "url_id" , "clicked_at"),
+    )
 class RevokedToken(Base):
     __tablename__ = "revoked_tokens"
 
