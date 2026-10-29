@@ -218,7 +218,8 @@ def get_urls_clicks_details(
 
     total = logs_query.count()
 
-    analytics, referer_analytics = build_click_analytics(db,logs_query)
+    analytics, referer_analytics = build_click_analytics(db,logs_query )
+    #analytics, referer_analytics = build_click_analytics(db,logs_query, page , limit)
 
     click_logs = (
         logs_query

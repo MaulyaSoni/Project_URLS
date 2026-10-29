@@ -39,7 +39,7 @@ def get_current_user(token: str = Depends(oauth2_scheme),db: Session = Depends(g
     username = get_username_from_token(token)
     user = (db.query(Users).filter(Users.username == username).first())
     if user is None:
-        raise HTTPException(status_code=401,detail="User not found")
+        raise HTTPException(status_code=401,detail="!! Current User not found (Unauthorized User) !!, User need to login ")
     
     return user
 

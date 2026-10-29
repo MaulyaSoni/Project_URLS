@@ -83,6 +83,7 @@ def create_admin(
     if admin_key != ADMIN_KEY:
         raise HTTPException(status_code = 403 , detail="You don't have valid ADMIN KEY to create admin")
     
+
     existing_user = (db.query(Users).filter(Users.email == user_data.email).first())
     
     if existing_user and existing_user.user_role == 'Admin':
@@ -95,7 +96,7 @@ def create_admin(
         user_role="Admin"
     )
     db.add(new_user)
-
+ 
     logging.info(f"New admin : {user_data.username} created")
     return new_user    
 
@@ -110,8 +111,13 @@ def fetch_all_user(
 def delete_user(
     db: Session,
     userid : int,
-    current_user : Users):
-    
+    current_user : Users
+    ):
+
+    if current_user.userid is None:
+        raise HTTPException(status_code = 404 , detail = "Current User not found ")
+
+
     user = db.get(Users , userid)
    
     try :
@@ -125,9 +131,10 @@ def delete_user(
     except Exception as e:
         logging.error(f"Delete user : {str(e)}")
         raise e
-    
+
+
     db.delete(user)
     db.commit()
     
-    logging.info(f"{userid} , user deleted by : '{current_user.username}'")
+    logging.info(f"{userid} , user deleted by : '{current_user.userid}'")
     return {"message" : f"{userid} , deleted successfully"}

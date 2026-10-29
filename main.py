@@ -336,14 +336,14 @@ def get_all_users(
         raise HTTPException(status_code=500 , detail="Internal Server Error")
 
 
-@app.delete("/users/delete/{userid}",
+@app.delete("/user/delete/{userid}",
     dependencies = [Depends(rate_limit_dependency)],
     response_model = MessageResponse ,
     status_code = 200
 )
 def delete_single_user(
     userid : int,
-    context = Depends(admin_context)
+    context = Depends(current_user_context)
 ):
     db = context["db"]
     try:
